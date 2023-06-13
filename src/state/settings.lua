@@ -6,10 +6,9 @@ local menu;
 local f = love.filesystem.newFile("settings.json")
   f:open"r"
   local c = f:read()
-  local tbl
   pcall(function ()
-   tbl = json.decode(c) end)
-  if tbl==nil then tbl={username="", password="", url=""} end
+   settings.tbl = json.decode(c) end)
+  if settings.tbl==nil then settings.tbl={username="", password="", url="", secret="", id="", zerotrust="false"} end
 settings.name="settings"
 settings.user=gooi.newButton({
     text="Username",
@@ -33,7 +32,7 @@ settings.pass=gooi.newButton({
 )
 ---[[
 settings.userText=gooi.newText({
-    text=tbl.username,
+    text=settings.tbl.username,
     x=20,
     y=70,
     w=200,
@@ -43,7 +42,7 @@ settings.userText=gooi.newText({
 )
 --]]
 settings.passText=gooi.newText({
-    text=tbl.password,
+    text=settings.tbl.password,
     x=20,
     y=170,
     w=200,
@@ -52,7 +51,7 @@ settings.passText=gooi.newText({
   }
 )
 settings.urlText=gooi.newText({
-    text=tbl.url,
+    text=settings.tbl.url,
     x=20,
     y=270,
     w=200,
@@ -73,7 +72,7 @@ settings.url=gooi.newButton({
 settings.back=gooi.newButton({
     text="Back",
     x=20,
-    y=370,
+    y=620,
     w=100,
     h=50,
     group="settings"
@@ -82,19 +81,63 @@ settings.back=gooi.newButton({
 settings.save=gooi.newButton({
     text="Save",
     x=20,
-    y=320,
+    y=570,
     w=100,
     h=50,
     group="settings"
   }
 )
-settings.save:onRelease(function () local str = json.encode{password=settings.passText:getText(), username=settings.userText:getText(), url=settings.urlText:getText()}
+local check = false;
+if settings.tbl.zerotrust=="true" then check=true end
+settings.zerotrust = gooi.newCheck{
+  text="Zero Trust Enabled",
+  x=20,
+  y=320,
+  w=300,
+  h=50,
+  group="settings",
+  checked=check
+}
+settings.id = gooi.newButton{
+  text="ID",
+  x=20,
+  y=370,
+  w=200,
+  h=50,
+  group="settings"
+}
+settings.idtext = gooi.newText{
+  text=settings.tbl.id,
+  x=20,
+  y=420,
+  w=400,
+  h=50,
+  group="settings"
+}
+settings.secret = gooi.newButton{
+  text="Secret",
+  x=20,
+  y=470,
+  w=200,
+  h=50,
+  group="settings"
+} 
+settings.secrettext = gooi.newText{
+  text=settings.tbl.secret,
+  x=20,
+  y=520,
+  w=600,
+  h=50,
+  group="settings"
+  }
+settings.save:onRelease(function () local str = json.encode{secret=settings.secrettext:getText(), zerotrust=tostring(settings.zerotrust.checked), id=settings.idtext:getText(), password=settings.passText:getText(), username=settings.userText:getText(), url=settings.urlText:getText()}
     love.filesystem.remove("settings.json")
   local f = love.filesystem.newFile("settings.json")
   f:open"a"
   f:write(str)
   f:flush()
   f:close()
+  settings.tbl=json.decode(str)
   end)
 settings.back:onRelease(function () state.switch(menu) end)
 settings.setMenu = function (m)

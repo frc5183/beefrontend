@@ -1,17 +1,22 @@
 local list = {}
 local items={}
 local items_lookup={}
-local http = require"socket.http"
+local http = require"http"
 local settings = require"state.settings"
 local state = require"lib.state"
 local dump = require"lib.dump"
 local refresh
-local ltn12 = require"ltn12"
 local main
 local json = require"lib.external.json"
 local token
+local item = require"state.item"
 local start=1
 list.name="list"
+item.setCanEdit(true)
+item.setList(list)
+item.load()
+list.items_list = items
+list.items_lookup = items_lookup
 list.setToken = function (newToken) token=newToken end
 list.switchto = function () gooi.setGroupEnabled("list", true) refresh() end
 list.switchaway = function () gooi.setGroupEnabled("list", false) end
@@ -37,33 +42,50 @@ for k=0, 9 do
       
 end
 function refresh () 
-  local resbody = {}
-  print(token)
-  local r, c, h = http.request({
-      method="GET",
-      url = settings.urlText:getText() .. "/items/all",
-      headers={authorization=token}, sink = ltn12.sink.table(resbody)})
+
+  local r, c, h, resbody = http.complete("GET", "/items/all", {}, {}, true)
   start=1
-  print(dump.dump2({r, c, h, resbody}))
-  for k, v in ipairs(resbody) do
-    print("AAAAAAAAAA")
-    print(dump.dump2(v))
-    local t = json.decode(v).data
-    print(dump.dump2(t))
-    item[k]=json.decode(t
+  
+  
+    local t = json.decode(table.concat(resbody))
+      items=t.data
       
-      )
-  end
     
-  for k, v in pairs(items) do items_inverse[v]=k end
+  for k, v in pairs(items) do items_lookup[v]=k end
   
   for k=1, 10 do 
-    items["item" .. (k-1)]:setText()
+    list["item" .. (k)]:setText(items[k].name)
+    list["item" .. (k)].item = items[k]
+    list["item" .. (k)]:onRelease(function () 
+        
+          
+          item.setActiveItem(list["item" .. (k)].item)
+          item.reload()
+          state.switch(item)
+        end)
+  end
+  list.items_list = items
+list.items_lookup = items_lookup
+end
+list.reset=refresh
+function up() 
+  if (items_lookup[list.item1.item]==1) then return end
+  for k=1, 10 do
+    local item = list["item" .. (k)]
+    local indexitem = items_lookup[item.item]
+    item:setText(items[indexitem-1].name)
+    item.item = items[indexitem-1]
   end
 end
-
-function up() end
-
+function down()
+  if (items_lookup[list.item10.item]==#items) then return end
+  for k=1, 10 do
+    local item = list["item" .. (k)]
+    local indexitem = items_lookup[item.item]
+    item:setText(items[indexitem+1].name)
+    item.item = items[indexitem+1]
+  end
+end
 list.refresh = gooi.newButton({
     text="Refresh",
     x=20,
@@ -74,7 +96,7 @@ list.refresh = gooi.newButton({
   }
 )
 list.refresh:onRelease(refresh)
-list.setMenu = function (m) main=m end
+list.setMenu = function (m) main=m  item.setMain(main) end
 list.up=gooi.newButton({
     text="SCROLL UP",
     x=20,
@@ -102,6 +124,8 @@ list.back=gooi.newButton({
     group="list"
   }
 )
+list.up:onRelease(up)
+list.down:onRelease(down)
 list.back:onRelease(function () 
     state.switch(main)
     end)

@@ -1,8 +1,7 @@
 local log = require"lib.log"
 local state = require"lib.state"
 local settings = require"state.settings"
-local ltn12 = require"ltn12"
-local http = require"socket.http"
+local http = require"http"
 local json = require"lib.external.json"
 local list = require"state.list"
 local dump = require"lib.dump"
@@ -22,17 +21,10 @@ menu.login=gooi.newButton({
 )
 menu.login:onRelease(function () 
     local content = "{\"login\":\"" .. settings.userText:getText() .. "\", \"password\":\"" .. settings.passText:getText() .. "\"}"
-    local resbody={}
-    local r, c, h = http.request{
-  method="POST",
-  url=settings.urlText:getText() .. "/users/login",
-  source=ltn12.source.string(content),
-  headers={["content-length"] = string.len(content), ["Content-Type"] = "application/json"},
-  sink = ltn12.sink.table(resbody)}
-    print(dump.dump2({r, c, h, resbody}))
+    local r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
     
     if c==200 then 
-      list.setToken(h.authorization)
+      http.setToken(h.authorization)
       state.switch(list)
       
     else
