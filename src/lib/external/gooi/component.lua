@@ -239,7 +239,20 @@ function component:draw()-- Every component has the same base:
     end
 
     local radiusCorner = style.radius
-
+    love.graphics.setColorMask(false)
+    love.graphics.setStencilMode("replace", "always", 1)
+    love.graphics.rectangle("fill",
+        math.floor(self.x),
+        math.floor(self.y),
+        math.floor(self.w),
+        math.floor(self.h),
+        self.style.radius,
+        self.style.radius,
+        circleRes)
+    love.graphics.setStencilMode("keep", "greater", 0)
+    love.graphics.setColorMask(true)
+    --[[
+    
     love.graphics.stencil(function()
       love.graphics.rectangle("fill",
         math.floor(self.x),
@@ -251,6 +264,7 @@ function component:draw()-- Every component has the same base:
         circleRes)
     end, "replace", 1)
     love.graphics.setStencilTest("greater", 0)
+    ]]
     local scaleY = 1
     local img = self.img3D
     if self:overIt() then
@@ -315,7 +329,7 @@ function component:draw()-- Every component has the same base:
           self.h / self.bgImage:getHeight())
     end
 
-    love.graphics.setStencilTest()
+    love.graphics.setStencilMode()
 
     -- Border:
     if style.showBorder then

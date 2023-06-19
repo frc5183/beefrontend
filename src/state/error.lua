@@ -1,6 +1,7 @@
 local oldState
 local state = require"lib.state"
 local err={}
+local log = require"lib.log"
 err.name="err"
 err.back = gooi.newButton({
     text="Back",
@@ -30,7 +31,9 @@ err.err=gooi.newLabel({
   }
 )
 
-err.switchto = function () gooi.setGroupEnabled("err", true) end
+err.switchto = function () gooi.setGroupEnabled("err", true) 
+  log.error(err.title.text .. ", " .. err.err.text)
+  end
 err.switchaway = function () gooi.setGroupEnabled("err", false) end
 err.back:onRelease(function () 
     state.switch(oldState)

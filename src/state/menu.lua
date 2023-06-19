@@ -21,10 +21,19 @@ menu.login=gooi.newButton({
 )
 menu.login:onRelease(function () 
     local content = "{\"login\":\"" .. settings.userText:getText() .. "\", \"password\":\"" .. settings.passText:getText() .. "\"}"
-    local r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
     
+    
+    
+    if (settings.tbl.zerotrust=="true") then
+    local r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
+    local i, j = string.find(h["set-cookie"], "CF_Authorization=.-%;")
+    
+    
+    http.setCookie(string.sub(h["set-cookie"], i+string.len("CF_Authorization="), j-1))
+    end
+    r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
     if c==200 then 
-      http.setToken(h.authorization)
+      http.setToken(h.Authorization)
       state.switch(list)
       
     else
@@ -60,4 +69,5 @@ menu.switchto = function ()
 end
 menu.settings:onRelease(function () state.switch(settings) end)
 menu.exit:onRelease(function() love.event.quit() end)
+gooi.setGroupEnabled("menu", false)
 return menu

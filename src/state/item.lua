@@ -7,6 +7,7 @@ local refresh
 local main
 local json = require"lib.external.json"
 local token
+local newMode = false
 local item = {}
 local activeItem = {id = "NIL" }
 local canEdit
@@ -17,15 +18,15 @@ item.setList = function(List) list=List end
 item.setActiveItem = function(newItem) activeItem=newItem end
 item.setCanEdit = function(edit) canEdit=edit end
 item.switchto = function () gooi.setGroupEnabled("item", true) end
-item.switchaway = function () gooi.setGroupEnabled("item", false) end
+item.switchaway = function () gooi.setGroupEnabled("item", false) newMode=false end
 local id
+item.setNewMode = function(val) newMode=val end
 
 item.load = function ()
   
   local func
   if (canEdit) then func = gooi.newText else func = gooi.newLabel end
   
-
 item.title = func{
   text=activeItem.name,
   x=20,
@@ -34,6 +35,7 @@ item.title = func{
   h=50,
   group="item"
 }
+if (not newMode) then
 item.checkouts = gooi.newButton{
   text="Checkouts",
   x=20,
@@ -41,7 +43,8 @@ item.checkouts = gooi.newButton{
   w=100,
   h=50,
   group="item",
-  }
+}
+end
 item.price = gooi.newLabel{
   text="Price",
   x=20,
@@ -82,10 +85,26 @@ item.phototext = func{
   h=50,
   group="item"
 }
+item.part = gooi.newLabel{
+  text="Part Number",
+  x=20,
+  y=370,
+  w=100,
+  h=50,
+  group="item"
+}
+item.parttext = func{
+  text=activeItem.partNumber,
+  x=20,
+  y=420,
+  w=100,
+  h=50,
+  group="item"
+}
 item.retailer = gooi.newLabel{
   text="Retailer",
   x=20,
-  y=370,
+  y=470,
   w=100,
   h=50,
   group="item"
@@ -93,7 +112,7 @@ item.retailer = gooi.newLabel{
 item.retailertext = func{
   text=activeItem.retailer,
   x=20,
-  y=420,
+  y=520,
   w=100,
   h=50,
   group="item"
@@ -101,54 +120,72 @@ item.retailertext = func{
 item.description = func{
   text=activeItem.description,
   x=20,
-  y=470,
+  y=570,
   w=100,
   h=50,
   group="item"
 }
+if (canEdit) then
 item.save = gooi.newButton{
   text="Save Item",
   x=20,
-  y=520,
+  y=620,
   w=100,
   h=50,
   group="item"
 }
 item.save:onRelease(function ()
+    local r, c, h, resbody
+    if (not newMode) then
     list.items_list[id].photo = item.phototext:getText()
     list.items_list[id].retailer = item.retailertext:getText()
     list.items_list[id].description = item.description:getText()
     list.items_list[id].price = item.pricetext:getText()
     list.items_list[id].name=item.title:getText()
-    local r, c, h, resbody = http.complete("PATCH", "/items/" .. id, nil, list.items_list[id], true)
-    print(dump.dump2{r, c, h, resbody})
+    list.items_list[id].partNumber=item.parttext:getText()
+    r, c, h, resbody = http.complete("PATCH", "/items/" .. id, nil, list.items_list[id], true)
+  else 
+    local out = {photo=item.phototext:getText(), retailer=item.retailertext:getText(), description=item.description:getText(), price=item.pricetext:getText(), name=item.title:getText(), partNumber=item.parttext:getText(), checkout="", checkouts=""}
+    r, c, h, resbody = http.complete("POST", "/items/new", nil, out, true)
+    
+  end
     list.reset()
     state.switch(list)
-    end)
+  end)
+end
 item.back = gooi.newButton{
   text="Back",
   x=20,
-  y=570,
+  y=670,
   w=100,
   h=50,
   group="item"
   
 }
 item.back:onRelease(function () state.switch(list) end)
-gooi.setGroupEnabled("item", false)
 
 end
 
 item.reload = function () 
+  if (newMode) then activeItem={
+      name="New Item",
+      price = "0",
+      id="ID Available After Creation",
+      photo = "photo",
+      retailer = "retailer",
+      description="description",
+      partNumber="0x000000"
+      }
+    end
   item.title:setText(activeItem.name)
   item.pricetext:setText(tostring(activeItem.price))
   item.id:setText("ID: " .. activeItem.id)
   item.phototext:setText(activeItem.photo)
   item.retailertext:setText(activeItem.retailer)
   item.description:setText(activeItem.description)
-  gooi.setGroupEnabled("item", false)
+  item.parttext:setText(activeItem.partNumber)
   id=activeItem.id
 end
-gooi.setGroupEnabled("item", false)
 
+gooi.setGroupEnabled("item", false)
 return item

@@ -3,8 +3,7 @@ local state = require"lib.state"
 local settings = {}
 local json = require"lib.external.json"
 local menu;
-local f = love.filesystem.newFile("settings.json")
-  f:open"r"
+local f = love.filesystem.openFile("settings.json", "r")
   local c = f:read()
   pcall(function ()
    settings.tbl = json.decode(c) end)
@@ -45,7 +44,7 @@ settings.passText=gooi.newText({
     text=settings.tbl.password,
     x=20,
     y=170,
-    w=200,
+    w=400,
     h=50,
     group="settings"
   }
@@ -54,7 +53,7 @@ settings.urlText=gooi.newText({
     text=settings.tbl.url,
     x=20,
     y=270,
-    w=200,
+    w=400,
     h=50,
     group="settings"
   }
@@ -132,8 +131,7 @@ settings.secrettext = gooi.newText{
   }
 settings.save:onRelease(function () local str = json.encode{secret=settings.secrettext:getText(), zerotrust=tostring(settings.zerotrust.checked), id=settings.idtext:getText(), password=settings.passText:getText(), username=settings.userText:getText(), url=settings.urlText:getText()}
     love.filesystem.remove("settings.json")
-  local f = love.filesystem.newFile("settings.json")
-  f:open"a"
+  local f = love.filesystem.openFile("settings.json", "a")
   f:write(str)
   f:flush()
   f:close()

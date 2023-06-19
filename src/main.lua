@@ -2,14 +2,20 @@ local log = require"lib.log"
 local state = require"lib.state"
 require"lib.external.gooi"
 require"lib.math2".integrate(math)
---local https = require"https"
 local http = require"http"
 local button
 local menu=require"state.menu"
 
-
-gooi.desktopMode()
+if (love.system.getOS() == "Windows" or love.system.getOS() == "Linux" or love.system.getOS() == "OS X") then
+  gooi.desktopMode()
+  log.info("Desktop Mode Enabled")
+end
 function love.load()
+  gooi.setGroupEnabled("item", false)
+  gooi.setGroupEnabled("settings", false)
+  gooi.setGroupEnabled("list", false)
+  gooi.setGroupEnabled("err", false)
+  gooi.setGroupEnabled("menu", false)
   state.switch(menu)
 end
 function love.draw()

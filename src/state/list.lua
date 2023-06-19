@@ -8,11 +8,12 @@ local dump = require"lib.dump"
 local refresh
 local main
 local json = require"lib.external.json"
+local canEdit = true
 local token
 local item = require"state.item"
 local start=1
 list.name="list"
-item.setCanEdit(true)
+item.setCanEdit(canEdit)
 item.setList(list)
 item.load()
 list.items_list = items
@@ -41,15 +42,31 @@ for k=0, 9 do
     )
       
 end
+if (canEdit) then
+list.newitem = gooi.newButton({
+    text="New Item",
+    x=140,
+    y=120,
+    w=100,
+    h=50,
+    group="list"
+  }
+)
+list.newitem:onRelease(function ()
+    item.setNewMode(true)
+    item.reload()
+    state.switch(item)
+  end
+)
+end
 function refresh () 
 
   local r, c, h, resbody = http.complete("GET", "/items/all", {}, {}, true)
   start=1
   
-  
-    local t = json.decode(table.concat(resbody))
+    local t = json.decode(resbody)
+    
       items=t.data
-      
     
   for k, v in pairs(items) do items_lookup[v]=k end
   
