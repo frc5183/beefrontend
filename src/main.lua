@@ -28,7 +28,6 @@ function love.mousereleased(x, y, button)    gooi.released() end
 function love.textinput(text)                gooi.textinput(text) end
 function love.keypressed(k, code, isrepeat)  gooi.keypressed(k, code) end
 function love.keyreleased(k, code, isrepeat) gooi.keyreleased(k, code) end
-
 function love.update(dt)
   gooi.update(dt)
 end

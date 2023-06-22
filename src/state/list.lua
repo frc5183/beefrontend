@@ -63,14 +63,13 @@ function refresh ()
 
   local r, c, h, resbody = http.complete("GET", "/items/all", {}, {}, true)
   start=1
-  
     local t = json.decode(resbody)
     
       items=t.data
     
   for k, v in pairs(items) do items_lookup[v]=k end
   
-  for k=1, 10 do 
+  for k=1, math.min(#items, 10) do 
     list["item" .. (k)]:setText(items[k].name)
     list["item" .. (k)].item = items[k]
     list["item" .. (k)]:onRelease(function () 
@@ -90,6 +89,7 @@ function up()
   for k=1, 10 do
     local item = list["item" .. (k)]
     local indexitem = items_lookup[item.item]
+    if not indexitem then return end
     item:setText(items[indexitem-1].name)
     item.item = items[indexitem-1]
   end
@@ -99,6 +99,7 @@ function down()
   for k=1, 10 do
     local item = list["item" .. (k)]
     local indexitem = items_lookup[item.item]
+    if not indexitem then return end
     item:setText(items[indexitem+1].name)
     item.item = items[indexitem+1]
   end

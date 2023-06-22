@@ -26,14 +26,14 @@ menu.login:onRelease(function ()
     
     if (settings.tbl.zerotrust=="true") then
     local r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
-    local i, j = string.find(h["set-cookie"], "CF_Authorization=.-%;")
+    local i, j = string.find(h["set-cookie"] or h["Set-Cookie"], "CF_Authorization=.-%;")
     
     
-    http.setCookie(string.sub(h["set-cookie"], i+string.len("CF_Authorization="), j-1))
+    http.setCookie(string.sub(h["set-cookie"] or h["Set-Cookie"], i+string.len("CF_Authorization="), j-1))
     end
     r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
     if c==200 then 
-      http.setToken(h.Authorization)
+      http.setToken(h.authorization)
       state.switch(list)
       
     else

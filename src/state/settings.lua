@@ -4,7 +4,10 @@ local settings = {}
 local json = require"lib.external.json"
 local menu;
 local f = love.filesystem.openFile("settings.json", "r")
-  local c = f:read()
+local c
+if f then
+  c= f:read()
+end
   pcall(function ()
    settings.tbl = json.decode(c) end)
   if settings.tbl==nil then settings.tbl={username="", password="", url="", secret="", id="", zerotrust="false"} end
