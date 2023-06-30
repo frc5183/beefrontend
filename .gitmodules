@@ -1,3 +1,8 @@
 [submodule "src/lib/external/InputField"]
 	path = src/lib/external/InputField
 	url = https://github.com/ReFreezed/InputField
+[submodule "./lib"]
+	url = https://github.com/frc5183/astrum
+[submodule "src/lib"]
+	path = src/lib
+	url = https://github.com/frc5183/astrum

@@ -11,57 +11,41 @@ local json = require"lib.external.json"
 local canEdit = true
 local token
 local item = require"state.item"
+local flux = require"lib.external.flux"
 local start=1
 list.name="list"
 item.setCanEdit(canEdit)
 item.setList(list)
 item.load()
+local enabled = false
+local gui = require"lib.gui"
 list.items_list = items
 list.items_lookup = items_lookup
 list.setToken = function (newToken) token=newToken end
-list.switchto = function () gooi.setGroupEnabled("list", true) refresh() end
-list.switchaway = function () gooi.setGroupEnabled("list", false) end
-  list.title=gooi.newLabel({
-      text="Items: ",
-      x=20,
-      y=20,
-      w=100,
-      h=50,
-      group="list"
-  }
-)
+local log = require"lib.log"
+local wait = require"lib.wait"
+list.title = gui.TextButton(20, 20, 200, 50, gui.Color(0, 0, 1, 1), "Items: ", 18, "center")
+
 for k=0, 9 do 
-  list["item" .. (k+1)] = gooi.newButton({
-      text="Item Placeholder ".. (k+1),
-      x=20, 
-      y=170+(k*50),
-      w=100,
-      h=50,
-      group="list"
-    }
-    )
+  list["item" .. (k+1)] = gui.TextButton(20, 170+(k*50), 200, 50, gui.Color(0, 0, 1, 1), "Item Placeholder " .. (k+1), 18, "center")
       
 end
 if (canEdit) then
-list.newitem = gooi.newButton({
-    text="New Item",
-    x=140,
-    y=120,
-    w=100,
-    h=50,
-    group="list"
-  }
-)
-list.newitem:onRelease(function ()
+  list.newitem = gui.TextButton(240, 120, 200, 50, gui.Color(0, 0, 1, 1), "New Item", 18, "center")
+list.newitem:onClick(function (pt, button, presses)
+    if (enabled and list.newitem:contains(pt) and button==1) then
+      
     item.setNewMode(true)
     item.reload()
-    state.switch(item)
+    wait(0.05, function () state.switch(item) end)
+    end
   end
 )
 end
 function refresh () 
 
   local r, c, h, resbody = http.complete("GET", "/items/all", {}, {}, true)
+  log.info("HTTP Response Code: " .. c or "")
   start=1
     local t = json.decode(resbody)
     
@@ -72,14 +56,19 @@ function refresh ()
   for k=1, math.min(#items, 10) do 
     list["item" .. (k)]:setText(items[k].name)
     list["item" .. (k)].item = items[k]
-    list["item" .. (k)]:onRelease(function () 
-        
-          
+    if (list["item" .. (k)].oldid~=nil) then 
+      local t=list["item" .. (k)].oldid
+      
+      list["item" .. (k)]:removeOnClick( t )
+    end
+    list["item" .. (k)].oldid = list["item" .. (k)]:onClick(function (pt, button, presses)
+        if (enabled and list["item" .. (k)]:contains(pt) and button==1) then
           item.setActiveItem(list["item" .. (k)].item)
           item.reload()
-          state.switch(item)
-        end)
-  end
+          wait(0.05, function () state.switch(item) end)
+        end
+      end)
+    end
   list.items_list = items
 list.items_lookup = items_lookup
 end
@@ -104,48 +93,52 @@ function down()
     item.item = items[indexitem+1]
   end
 end
-list.refresh = gooi.newButton({
-    text="Refresh",
-    x=20,
-    y=70,
-    w=100,
-    h=50,
-    group="list"
-  }
-)
-list.refresh:onRelease(refresh)
+list.refresh = gui.TextButton(20, 70, 200, 50, gui.Color(0, 0, 1 ,1), "Refresh", 18, "center")
+
+list.refresh:onClick(function (pt, button) if (enabled and list.refresh:contains(pt) and button==1) then refresh() end end)
 list.setMenu = function (m) main=m  item.setMain(main) end
-list.up=gooi.newButton({
-    text="SCROLL UP",
-    x=20,
-    y=120,
-    w=100,
-    h=50,
-    group="list"
-  }
-)
-list.down=gooi.newButton({
-    text="SCROLL DOWN",
-    x=20,
-    y=670,
-    w=100,
-    h=50,
-    group="list"
-  }
-)
-list.back=gooi.newButton({
-    text="Back",                            
-    x=20,
-    y=720,
-    w=100,
-    h=50,
-    group="list"
-  }
-)
-list.up:onRelease(up)
-list.down:onRelease(down)
-list.back:onRelease(function () 
-    state.switch(main)
-    end)
-gooi.setGroupEnabled("list", false)
+list.up = gui.TextButton(20, 120, 200, 50, gui.Color(0, 0, 1, 1), "Scroll Up", 18, "center")
+list.down = gui.TextButton(20, 670, 200, 50, gui.Color(0, 0, 1, 1), "Scroll Down", 18, "center")
+list.back = gui.TextButton(20, 720, 200, 50, gui.Color(0, 0, 1, 1), "Back", 18, "center")
+
+list.up:onClick(function (pt, button) if (enabled and list.up:contains(pt) and button==1) then up() end end)
+list.down:onClick(function (pt, button) if (enabled and list.down:contains(pt) and button==1) then down() end end)
+
+
+list.back:onClick(function (pt, button) if (enabled and list.back:contains(pt) and button==1) then 
+    wait(0.05, function () state.switch(main) end)
+     end end)
+list.switchto = function () enabled=true
+  refresh() end
+list.switchaway = function () enabled=false  end
+function list.mousemoved() end
+function list.textinput() end
+function list.keypressed() end
+function list.wheelmoved() end
+function list.draw() 
+  list.back:draw()
+  list.up:draw()
+  list.down:draw()
+  list.refresh:draw()
+  if (canEdit) then list.newitem:draw() end
+  for k=1, 10 do
+    local item = list["item" .. (k)]
+    item:draw()
+  end
+end
+function list.update(dt)
+  wait.update()
+  flux.update(dt)
+  local pt = math.Point2D(love.mouse.getPosition())
+  list.back:update(dt, pt)
+  list.up:update(dt, pt)
+  list.down:update(dt, pt)
+  list.refresh:update(dt, pt)
+  if (canEdit) then list.newitem:update(dt, pt) end
+  for k=1, 10 do
+    local item = list["item" .. (k)]
+    item:update(dt, pt)
+  end
+end
+
 return list

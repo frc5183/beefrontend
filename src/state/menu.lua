@@ -4,22 +4,21 @@ local settings = require"state.settings"
 local http = require"http"
 local json = require"lib.external.json"
 local list = require"state.list"
+local gui = require"lib.gui"
+local flux = require"lib.external.flux"
 local dump = require"lib.dump"
 local err = require"state.error"
+local wait = require"lib.wait"
 local menu = {}
+local enabled = false
 menu.name="menu"
-settings.setMenu(menu);
+settings.setMenu(menu)
 list.setMenu(menu)
-menu.login=gooi.newButton({
-    text="Login",
-    x=20,
-    y=20,
-    w=100,
-    h=50,
-    group="menu"
-  }
-)
-menu.login:onRelease(function () 
+menu.login = gui.TextButton(20, 20, 200, 50, gui.Color(0, 0, 1, 1), "Login", 18, "center")
+menu.settings = gui.TextButton(20, 70, 200, 50, gui.Color(0, 0, 1, 1), "Settings", 18, "center")
+menu.exit = gui.TextButton(20, 120, 200, 50, gui.Color(0, 0, 1, 1), "Exit", 18, "center")
+menu.login:onClick(function (pt, button)
+    if (enabled and menu.login:contains(pt) and button==1) then
     local content = "{\"login\":\"" .. settings.userText:getText() .. "\", \"password\":\"" .. settings.passText:getText() .. "\"}"
     
     
@@ -32,42 +31,43 @@ menu.login:onRelease(function ()
     http.setCookie(string.sub(h["set-cookie"] or h["Set-Cookie"], i+string.len("CF_Authorization="), j-1))
     end
     r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
+    log.info("HTTP Response Code: " .. c or "")
     if c==200 then 
-      http.setToken(h.authorization)
-      state.switch(list)
+      http.setToken(h.Authorization)
+      wait(0.05, function () state.switch(list) end)
       
     else
       err.title:setText("ERROR " .. c)
       err.err:setText(json.decode(resbody[1] or "{\"message\":\"connection refused\"}").message)
       err.setState(menu)
-      state.switch(err)
+      wait(0.05, function () state.switch(err) end)
+    end
     end
     end)
-menu.settings=gooi.newButton({
-    text="Settings",
-    x=20,
-    y=70,
-    w=100,
-    h=50,
-    group="menu"
-  }
-)
-menu.exit=gooi.newButton({
-    text="Exit",
-    x=20,
-    y=120,
-    w=100,
-    h=50,
-    group="menu"
-  }
-)
-menu.switchaway = function ()
-  gooi.setGroupEnabled("menu", false)
+
+menu.switchaway = function () 
+  enabled=false
 end
 menu.switchto = function ()
-  gooi.setGroupEnabled("menu", true)
+  enabled=true
 end
-menu.settings:onRelease(function () state.switch(settings) end)
-menu.exit:onRelease(function() love.event.quit() end)
-gooi.setGroupEnabled("menu", false)
+menu.settings:onClick(function (pt, button) if (enabled and menu.settings:contains(pt) and button==1) then wait(0.05, function () state.switch(settings) end) end end)
+menu.exit:onClick(function(pt, button) if (enabled and menu.exit:contains(pt) and button==1) then  love.event.quit() end end)
+function menu.mousemoved() end
+function menu.textinput() end
+function menu.keypressed() end
+function menu.wheelmoved() end
+function menu.update(dt)
+  local pt = math.Point2D(love.mouse.getPosition())
+  flux.update(dt)
+  menu.login:update(dt, pt)
+  menu.settings:update(dt, pt)
+  menu.exit:update(dt, pt)
+  wait.update()
+end
+function menu.draw()
+  menu.login:draw()
+  menu.settings:draw()
+  menu.exit:draw()
+end
 return menu
