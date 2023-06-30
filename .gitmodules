@@ -1,0 +1,3 @@
+[submodule "src/lib/external/InputField"]
+	path = src/lib/external/InputField
+	url = https://github.com/ReFreezed/InputField
