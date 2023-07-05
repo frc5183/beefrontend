@@ -1,27 +1,37 @@
 local log = require"lib.log"
 local state = require"lib.state"
-local settings = {}
-local json = require"lib.external.json"
-local menu;
-local f = love.filesystem.openFile("settings.json", "r")
 local gui = require"lib.gui"
 local ClickPulser = require"lib.gui.subsystem.ClickPulser"
 local wait = require"lib.wait"
-local c
-local enabled = false
+local json = require"lib.external.json"
 local flux = require"lib.external.flux"
+-- State Info and Basic Content
+local settings = {
+  name = "settings",
+  user     = gui.TextButton(20, 20, 200, 50, gui.Color(0, 0, 1, 1), "Username", 18, "center"),
+  pass     = gui.TextButton(20,120, 200, 50, gui.Color(0, 0, 1, 1), "Password", 18, "center"),
+  url      = gui.TextButton(20,220, 200, 50, gui.Color(0, 0, 1, 1), "Server URL", 18, "center"),
+  id       = gui.TextButton(20,370, 200, 50, gui.Color(0, 0, 1, 1), "ID", 18, "center"),
+  secret   = gui.TextButton(20,470, 200, 50, gui.Color(0, 0, 1, 1), "Secret", 18, "center"),
+  save     = gui.TextButton(20,570, 200, 50, gui.Color(0, 0, 1, 1), "Save", 18, "center"),
+  back     = gui.TextButton(20,620, 200, 50, gui.Color(0, 0, 1, 1), "Back", 18, "center")
+}
+-- Local Shared Variables and Load Functions
+local f = love.filesystem.openFile("settings.json", "r")
+local enabled = false
+local menu
+local check = false
+local c
+-- Load Settings File
 if f then
   c= f:read()
 end
   pcall(function ()
    settings.tbl = json.decode(c) end)
-  if settings.tbl==nil then settings.tbl={username="", password="", url="", secret="", id="", zerotrust="false"} end
-settings.name="settings"
-settings.user     = gui.TextButton(20, 20, 200, 50, gui.Color(0, 0, 1, 1), "Username", 18, "center")
+ if settings.tbl==nil then settings.tbl={username="", password="", url="", secret="", id="", zerotrust="false"} end
+-- Load File-Dependent GUI Elements
 settings.userText = gui.TextInput (20, 70, 200, 50, gui.Color(0, 0, 1, 1), settings.tbl.username, 18, "left", "normal")
-settings.pass     = gui.TextButton(20,120, 200, 50, gui.Color(0, 0, 1, 1), "Password", 18, "center")
 settings.passText = gui.TextInput (20,170, 200, 50, gui.Color(0, 0, 1, 1), settings.tbl.password, 18, "left", "password")
-settings.url      = gui.TextButton(20,220, 200, 50, gui.Color(0, 0, 1, 1), "Server URL", 18, "center")
 settings.urlText  = gui.TextInput (20,270, 200, 50, gui.Color(0, 0, 1, 1), settings.tbl.url, 18, "left", "normal")
 local zerotrust = settings.tbl.zerotrust
 local zero_text
@@ -33,15 +43,11 @@ else
   settings._zerotrust=false
 end
 settings.zerotrust= gui.TextButton(20,320, 200, 50, gui.Color(0, 0, 1, 1), "Zerotrust " .. zero_text, 18, "center")
-settings.id       = gui.TextButton(20,370, 200, 50, gui.Color(0, 0, 1, 1), "ID", 18, "center")
 settings.idText   = gui.TextInput (20,420, 200, 50, gui.Color(0, 0, 1, 1), settings.tbl.id, 18, "left", "normal")
-settings.secret   = gui.TextButton(20,470, 200, 50, gui.Color(0, 0, 1, 1), "Secret", 18, "center")
 settings.secrettext=gui.TextInput (20,520, 200, 50, gui.Color(0, 0, 1, 1), settings.tbl.secret, 18, "left", "password")
-settings.save     = gui.TextButton(20,570, 200, 50, gui.Color(0, 0, 1, 1), "Save", 18, "center")
-settings.back     = gui.TextButton(20,620, 200, 50, gui.Color(0, 0, 1, 1), "Back", 18, "center")
 
-local check = false;
 if settings.tbl.zerotrust=="true" then check=true end
+-- Button Callbacks
 settings.zerotrust:onClick(function (pt, button, presses)
   if (enabled and settings.zerotrust:contains(pt) and button==1) then
     settings._zerotrust = not settings._zerotrust
@@ -67,9 +73,24 @@ settings.back:onClick(function(pt, button, presses)
     wait(0.05, function () state.switch(menu) end)
   end
 end)
-settings.setMenu = function (m)
-  menu=m
+
+
+-- State Switch Functions
+settings.switchto = function () enabled=true 
+  settings.userText:enable()
+  settings.passText:enable()
+  settings.urlText:enable()
+  settings.idText:enable()
+  settings.secrettext:enable()
+  end
+settings.switchaway = function () enabled=false 
+settings.userText:disable()
+  settings.passText:disable()
+  settings.urlText:disable()
+  settings.idText:disable()
+  settings.secrettext:disable()
 end
+-- State Love2D Functions
 settings.draw = function ()
   settings.user:draw()
   settings.userText:draw()
@@ -84,20 +105,6 @@ settings.draw = function ()
   settings.secrettext:draw()
   settings.save:draw()
   settings.back:draw()
-end
-settings.switchto = function () enabled=true 
-  settings.userText:enable()
-  settings.passText:enable()
-  settings.urlText:enable()
-  settings.idText:enable()
-  settings.secrettext:enable()
-  end
-settings.switchaway = function () enabled=false 
-  settings.userText:disable()
-  settings.passText:disable()
-  settings.urlText:disable()
-  settings.idText:disable()
-  settings.secrettext:disable()
 end
 settings.update = function (dt) 
   wait.update()
@@ -141,5 +148,8 @@ function settings.wheelmoved(dx, dy)
   settings.idText:wheelmoved(dx, dy)
   settings.secrettext:wheelmoved(dx, dy)
 end
-
+-- State Data-Chain Functions
+settings.setMenu = function (m)
+  menu=m
+end
 return settings

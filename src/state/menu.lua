@@ -1,3 +1,4 @@
+-- Imports
 local log = require"lib.log"
 local state = require"lib.state"
 local settings = require"state.settings"
@@ -9,14 +10,20 @@ local flux = require"lib.external.flux"
 local dump = require"lib.dump"
 local err = require"state.error"
 local wait = require"lib.wait"
-local menu = {}
+-- State Info and Basic Content
+local menu = {
+  name="menu",
+  login = gui.TextButton(20, 20, 200, 50, gui.Color(0, 0, 1, 1), "Login", 18, "center"),
+  settings = gui.TextButton(20, 70, 200, 50, gui.Color(0, 0, 1, 1), "Settings", 18, "center"),
+  exit = gui.TextButton(20, 120, 200, 50, gui.Color(0, 0, 1, 1), "Exit", 18, "center"),
+  
+}
+-- Local Shared Variables
 local enabled = false
-menu.name="menu"
+-- Configurations and Load Functions
 settings.setMenu(menu)
 list.setMenu(menu)
-menu.login = gui.TextButton(20, 20, 200, 50, gui.Color(0, 0, 1, 1), "Login", 18, "center")
-menu.settings = gui.TextButton(20, 70, 200, 50, gui.Color(0, 0, 1, 1), "Settings", 18, "center")
-menu.exit = gui.TextButton(20, 120, 200, 50, gui.Color(0, 0, 1, 1), "Exit", 18, "center")
+-- Button Callbacks
 menu.login:onClick(function (pt, button)
     if (enabled and menu.login:contains(pt) and button==1) then
     local content = "{\"login\":\"" .. settings.userText:getText() .. "\", \"password\":\"" .. settings.passText:getText() .. "\"}"
@@ -45,14 +52,16 @@ menu.login:onClick(function (pt, button)
     end
     end)
 
+menu.settings:onClick(function (pt, button) if (enabled and menu.settings:contains(pt) and button==1) then wait(0.05, function () state.switch(settings) end) end end)
+menu.exit:onClick(function(pt, button) if (enabled and menu.exit:contains(pt) and button==1) then  love.event.quit() end end)
+-- State Switch Functions
 menu.switchaway = function () 
   enabled=false
 end
 menu.switchto = function ()
   enabled=true
 end
-menu.settings:onClick(function (pt, button) if (enabled and menu.settings:contains(pt) and button==1) then wait(0.05, function () state.switch(settings) end) end end)
-menu.exit:onClick(function(pt, button) if (enabled and menu.exit:contains(pt) and button==1) then  love.event.quit() end end)
+-- State Love2D Functions
 function menu.mousemoved() end
 function menu.textinput() end
 function menu.keypressed() end

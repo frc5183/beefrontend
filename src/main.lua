@@ -1,11 +1,9 @@
-
 local log = require"lib.log"
 local state = require"lib.state"
-require"lib.math2".integrate(math)
 local http = require"http"
 local gui = require"lib.gui"
-local button
 local menu = require "state.menu"
+require"lib.math2".integrate(math)
 local om = love.mouse.getPosition
 function love.mouse.getPosition()
   local x, y = om()
@@ -15,7 +13,6 @@ function love.mouse.getPosition()
 end
 function love.load()
   state.switch(menu)
-
 end
 
 function love.mousepressed(x, y, button, istouch, presses) 

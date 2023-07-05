@@ -1,39 +1,36 @@
-local list 
+-- Imports
 local http = require"http"
 local settings = require"state.settings"
 local state = require"lib.state"
 local dump = require"lib.dump"
-local refresh
-local main
 local json = require"lib.external.json"
-local token
-local newMode = false
-local item = {}
-local activeItem={
-      name="New Item",
-      price = "0",
-      id="ID Available After Creation",
-      photo = "photo",
-      retailer = "retailer",
-      description="description",
-      partNumber="0x000000"
-      }
-local gui = require"lib.gui"
-local enabled = false
 local flux = require"lib.external.flux"
 local wait = require"lib.wait"
 local log = require"lib.log"
+local gui = require"lib.gui"
+-- State Info and Basic Content
+local item = {
+  name="item",
+}
+-- Local Shared Variables
+local activeItem={
+  name="New Item",
+  price = "0",
+  id="ID Available After Creation",
+  photo = "photo",
+  retailer = "retailer",
+  description="description",
+  partNumber="0x000000"
+}
+local enabled = false
+local newMode = false
+local list 
+local refresh
+local main
+local token
 local canEdit
-item.loaded=false
-item.name="item"
-item.setMain = function(Main) main=Main end
-item.setList = function(List) list=List end
-item.setActiveItem = function(newItem) activeItem=newItem end
-item.setCanEdit = function(edit) canEdit=edit end
-
 local id
-item.setNewMode = function(val) newMode=val end
-
+-- State Load Functions
 item.load = function ()
   if (item.price) then return end
   local func
@@ -83,6 +80,7 @@ end
 end
 
 item.reload = function () 
+  
   if (newMode) then activeItem={
       name="New Item",
       price = "0",
@@ -103,6 +101,7 @@ item.reload = function ()
   item.parttext:setText(activeItem.partNumber or "")
   id=activeItem.id
 end
+-- State Switch Functions
 item.switchto = function () enabled=true
   if (canEdit) then
   item.pricetext:enable()
@@ -124,6 +123,7 @@ item.switchaway = function ()
   item.title:disable()
   end
   newMode=false end
+-- State Love2D Functions
 item.update = function (dt)
   wait.update()
     local pt = math.Point2D(love.mouse.getPosition())
@@ -181,6 +181,7 @@ function item.wheelmoved(dx, dy)
   end
 end
 function item.draw()
+  
   item.price:draw()
   item.pricetext:draw()
   item.id:draw()
@@ -196,4 +197,12 @@ function item.draw()
   if (not newMode) then item.checkouts:draw() end
   if item.save then item.save:draw() end
 end
+-- State Data-Chain Functions
+item.setMain = function(Main) main=Main end
+item.setList = function(List) list=List end
+item.setActiveItem = function(newItem) activeItem=newItem end
+item.setCanEdit = function(edit) canEdit=edit end
+item.setNewMode = function(val) newMode=val end
+
+--Return State
 return item
