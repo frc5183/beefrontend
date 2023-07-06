@@ -6,6 +6,7 @@ local dump = require"lib.dump"
 local json = require"lib.external.json"
 local flux = require"lib.external.flux"
 local wait = require"lib.wait"
+local err = require"state.error"
 local log = require"lib.log"
 local gui = require"lib.gui"
 -- State Info and Basic Content
@@ -50,24 +51,45 @@ item.load = function ()
   if (canEdit) then
   item.save = gui.TextButton(20, 620, 200, 50, gui.Color(0, 0, 1, 1), "Save Item", 18, "center")
   item.save:onClick(function (pt, button, presses)
-      if (enabled and item.save:contains(pt) and button==1) then 
-        local r, c, h, resbody
+  if (enabled and item.save:contains(pt) and button==1) then 
+    local r, c, h, resbody
     if (not newMode) then
-    list.items_list[id].photo = item.phototext:getText()
-    list.items_list[id].retailer = item.retailertext:getText()
-    list.items_list[id].description = item.description:getText()
-    list.items_list[id].price = item.pricetext:getText()
-    list.items_list[id].name=item.title:getText()
-    list.items_list[id].partNumber=item.parttext:getText()
-    r, c, h, resbody = http.complete("PATCH", "/items/" .. id, nil, list.items_list[id], true)
-    log.info("HTTP Response Code: " .. c or ""  )
-  else 
-    local out = {photo=item.phototext:getText(), retailer=item.retailertext:getText(), description=item.description:getText(), price=item.pricetext:getText(), name=item.title:getText(), partNumber=item.parttext:getText(), checkout="", checkouts=""}
-    r, c, h, resbody = http.complete("POST", "/items/new", nil, out, true)
-    log.info("HTTP Response Code: " .. c or "")
-  end
-    list.reset()
-    wait(0.05, function () state.switch(list) end)
+      list.items_list[id].photo = item.phototext:getText()
+      list.items_list[id].retailer = item.retailertext:getText()
+      list.items_list[id].description = item.description:getText()
+      list.items_list[id].price = item.pricetext:getText()
+      list.items_list[id].name=item.title:getText()
+      list.items_list[id].partNumber=item.parttext:getText()
+      r, c, h, resbody = http.complete("PATCH", "/items/" .. id, nil, list.items_list[id], true)
+      if c ~= 200 then 
+        pcall(function ()
+          err.setState(list)
+          local resbody = json.decode(resbody)
+          err.title:setText(resbody.status)
+          err.err:setText(resbody.message)
+        end)
+        wait(0.05, function() state.switch(err) end)
+      end
+      log.info("HTTP Response Code: " .. c or ""  )
+    else 
+      local out = {photo=item.phototext:getText(), retailer=item.retailertext:getText(), description=item.description:getText(), price=item.pricetext:getText(), name=item.title:getText(), partNumber=item.parttext:getText(), checkout="", checkouts=""}
+      r, c, h, resbody = http.complete("POST", "/items/new", nil, out, true)
+      if c ~= 201 then 
+        pcall(function ()
+      err.setState(list)
+      local resbody = json.decode(resbody)
+      err.title:setText(resbody.status)
+      err.err:setText(resbody.message)
+      end)
+        list.reset()
+        wait(0.05, function() state.switch(err) end)
+      else
+        log.info("HTTP Response Code: " .. c or "")
+ 
+        list.reset()
+        wait(0.05, function () state.switch(list) end)
+      end
+    end
     end
   end)
 end
@@ -97,7 +119,6 @@ item.reload = function ()
   item.phototext:setText(activeItem.photo)
   item.retailertext:setText(activeItem.retailer)
   item.description:setText(activeItem.description)
-  print(activeItem.partnumber)
   item.parttext:setText(activeItem.partNumber or "")
   id=activeItem.id
 end

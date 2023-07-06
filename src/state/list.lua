@@ -4,6 +4,7 @@ local settings = require"state.settings"
 local state = require"lib.state"
 local dump = require"lib.dump"
 local json = require"lib.external.json"
+local err = require"state.error"
 local item = require"state.item"
 local flux = require"lib.external.flux"
 local log = require"lib.log"
@@ -38,9 +39,22 @@ local function refresh ()
   local r, c, h, resbody = http.complete("GET", "/items/all", {}, {}, true)
   log.info("HTTP Response Code: " .. c or "")
   start=1
-    local t = json.decode(resbody)
+  
+    local t
+    pcall(function () t = json.decode(resbody)
+  end)
+  if not (t) then 
+    pcall(function ()
+          err.setState(list)
+          err.title:setText("ERROR")
+          err.err:setText("Invalid Response Body")
+        end)
+        wait(0.05, function() state.switch(err) end)
+    
+  elseif c==200 then
     
       items=t.data
+      if not items then items={} end
     
   for k, v in pairs(items) do items_lookup[v]=k end
   
@@ -60,8 +74,18 @@ local function refresh ()
         end
       end)
     end
+  
   list.items_list = items
 list.items_lookup = items_lookup
+else 
+pcall(function ()
+          err.setState(list)
+          local resbody = json.decode(resbody)
+          err.title:setText(resbody.status)
+          err.err:setText(resbody.message)
+        end)
+        wait(0.05, function() state.switch(err) end)
+end
 end
 list.reset=refresh
 local function up() 
@@ -75,7 +99,7 @@ local function up()
   end
 end
 local function down()
-  if (items_lookup[list.item10.item]==#items) then return end
+  if (items_lookup[list.item10.item]==#items) or #items<10 then return end
   for k=1, 10 do
     local item = list["item" .. (k)]
     local indexitem = items_lookup[item.item]

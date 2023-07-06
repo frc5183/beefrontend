@@ -31,21 +31,38 @@ menu.login:onClick(function (pt, button)
     
     
     if (settings.tbl.zerotrust=="true") then
-    local r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
-    local i, j = string.find(h["set-cookie"] or h["Set-Cookie"], "CF_Authorization=.-%;")
-    
-    
-    http.setCookie(string.sub(h["set-cookie"] or h["Set-Cookie"], i+string.len("CF_Authorization="), j-1))
+      local i, j, r, c, h, resbody
+      pcall(function ()
+    r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
+    i, j = string.find(h["set-cookie"] or h["Set-Cookie"], "CF_Authorization=.-%;")
+    end)
+    if not (i and j) then 
+      err.title:setText("ERROR")
+      err.err:setText("Invalid Zerotrust")
+      err.setState(menu)
+      wait(0.05, function () state.switch(err) end)
+      
+    else
+      http.setCookie(string.sub(h["set-cookie"] or h["Set-Cookie"], i+string.len("CF_Authorization="), j-1))
     end
+  end
     r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
     log.info("HTTP Response Code: " .. c or "")
     if c==200 then 
-      http.setToken(h.Authorization)
+      if not (h.Authorization or h.authorization) then
+        err.title:setText("ERROR " .. c)
+      err.err:setText("Connection Error: Check URL")
+      err.setState(menu)
+      wait(0.05, function () state.switch(err) end)
+      end
+      http.setToken(h.Authorization or h.authorization)
+      
       wait(0.05, function () state.switch(list) end)
       
     else
       err.title:setText("ERROR " .. c)
-      err.err:setText(json.decode(resbody[1] or "{\"message\":\"connection refused\"}").message)
+      err.err:setText("Connection Error: Check URL")
+      pcall(function () err.err:setText(json.decode(resbody or "{\"message\":\"connection refused\"}").message) end)
       err.setState(menu)
       wait(0.05, function () state.switch(err) end)
     end
