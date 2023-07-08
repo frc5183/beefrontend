@@ -34,7 +34,7 @@ jobs:
            
             chmod a+x appimagetool-x86_64.AppImage
            sed -i "s/love %f/beefrontend %f\n/g" ./squashfs-root/AppRun
-           sed -i 's/love %f/beefrontend %f\n/g' ./squashfs-root/love.desktop
+           sed -i 's/love/beefrontend\n/g' ./squashfs-root/love.desktop
            
            "./appimagetool-x86_64.AppImage" squashfs-root ./beefrontend.AppImage
            rm -rf ./love.AppImage
