@@ -16,7 +16,7 @@ jobs:
     steps:
        - name: Linux
          run: |
-           sudo apt install sed
+           sudo apt install sed fuse2
            rm -rf ./beefrontend.AppImage
            git clone --recurse-submodule https://github.com/frc5183/beefrontend/
            cp ./beefrontend/buildtools/love.AppImage ./love.AppImage
