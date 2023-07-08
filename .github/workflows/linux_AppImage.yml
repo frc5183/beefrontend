@@ -15,27 +15,13 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
        - name: Linux
          run: |
-           sudo apt-get update
-           sudo apt-get install sed
-           sudo apt-get install build-essential autotools-dev automake libtool pkg-config libfreetype6-dev libluajit-5.1-dev libsdl2-dev libopenal-dev libogg-dev libvorbis-dev libmodplug-dev libmpg123-dev libtheora-dev
-           sudo apt-get install autotools-dev automake autoconf libtool patchelf curl pkg-config
-           sudo apt-get install build-essential git make \
-            pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
-            libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
-            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev \
-            libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
-            libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev libfuse2
-           git clone https://github.com/love2d/love-appimage-source -b 12.x
-           cd love-appimage-source
-           make
-           cp ./love-main.AppImage ../love.AppImage
-           cd ..
+           git clone --recurse-submodule https://github.com/frc5183/beefrontend/
+           cp ./beefrontend/buildtools/love.AppImage ./love.AppImage
            love.AppImage --appimage-extract
-           git clone --recurse-submodules https://github.com/frc5183/beefrontend/
            zip -9 -r ./beefrontend.love ./beefrontend/src/
            cat squashfs-root/bin/love beefrontend.love > squashfs-root/bin/beefrontend
            chmod +x squashfs-root/bin/beefrontend
