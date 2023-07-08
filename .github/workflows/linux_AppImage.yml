@@ -27,7 +27,7 @@ jobs:
            wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
            chmod a+x appimagetool-x86_64.AppImage
            sed 's/(?:^|\W)Exec=love %f(?:$|\W)/\nExec=beefrontend %f\n/g' ./squashfs-root/love.desktop
-           ./appimagetool-x86_64.AppImage squashfs-root ./beefrontend.AppImage
+           "./appimagetool-x86_64.AppImage" squashfs-root ./beefrontend.AppImage
            rm -rf ./love.AppImage
            rm -rf ./beefrontend
            rm -rf ./appimagetool-x86_64.AppImage
