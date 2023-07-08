@@ -22,7 +22,7 @@ jobs:
            chmod +x ./love.AppImage
            ./love.AppImage --appimage-extract
            zip -9 -r ./beefrontend.love ./beefrontend/src/
-           cat squashfs-root/bin/love beefrontend.love > squashfs-root/bin/beefrontend
+           cat squashfs-root/bin/love ./beefrontend.love > squashfs-root/bin/beefrontend
            chmod +x squashfs-root/bin/beefrontend
            wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
            chmod a+x appimagetool-x86_64.AppImage
