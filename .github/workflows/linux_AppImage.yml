@@ -1,0 +1,50 @@
+# This is a basic workflow to help you get started with Actions
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "master" branch
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    runs-on: ubuntu-latest
+    steps:
+       - name: Linux
+         run: |
+           sudo apt-get update
+           sudo apt-get install sed
+           sudo apt-get install build-essential autotools-dev automake libtool pkg-config libfreetype6-dev libluajit-5.1-dev libsdl2-dev libopenal-dev libogg-dev libvorbis-dev libmodplug-dev libmpg123-dev libtheora-dev
+           sudo apt-get install autotools-dev automake autoconf libtool patchelf curl pkg-config
+           sudo apt-get install build-essential git make \
+            pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
+            libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev \
+            libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+            libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev libfuse2
+           git clone https://github.com/love2d/love-appimage-source -b 12.x
+           cd love-appimage-source
+           make
+           cp ./love-main.AppImage ../love.AppImage
+           cd ..
+           love.AppImage --appimage-extract
+           git clone --recurse-submodules https://github.com/frc5183/beefrontend/
+           zip -9 -r ./beefrontend.love ./beefrontend/src/
+           cat squashfs-root/bin/love beefrontend.love > squashfs-root/bin/beefrontend
+           chmod +x squashfs-root/bin/beefrontend
+           wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+           chmod a+x appimagetool-x86_64.AppImage
+           sed 's/(?:^|\W)Exec=love %f(?:$|\W)/\nExec=beefrontend %f\n/g' ./squashfs-root/love.desktop
+           appimagetool squashfs-root ./beefrontend.AppImage
+       - name: Artifact AppImage
+         uses: actions/upload-artifact@v3
+         with:
+            name: beefrontend.AppImage
+            path: beefrontend.AppImage
