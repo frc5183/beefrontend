@@ -5,9 +5,6 @@ on:
   # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -21,7 +18,8 @@ jobs:
          run: |
            git clone --recurse-submodule https://github.com/frc5183/beefrontend/
            cp ./beefrontend/buildtools/love.AppImage ./love.AppImage
-           love.AppImage --appimage-extract
+           chmod +x ./love.AppImage
+           ./love.AppImage --appimage-extract
            zip -9 -r ./beefrontend.love ./beefrontend/src/
            cat squashfs-root/bin/love beefrontend.love > squashfs-root/bin/beefrontend
            chmod +x squashfs-root/bin/beefrontend
