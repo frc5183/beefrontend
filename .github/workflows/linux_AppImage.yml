@@ -23,12 +23,19 @@ jobs:
            ./love.AppImage --appimage-extract
            cd ./beefrontend/src/
            zip -9 -r ../../beefrontend.love ./*
+          
            cd ../..
+          
            cat squashfs-root/bin/love ./beefrontend.love > squashfs-root/bin/beefrontend
+          
            chmod +x squashfs-root/bin/beefrontend
+          
            wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-           chmod a+x appimagetool-x86_64.AppImage
+           
+            chmod a+x appimagetool-x86_64.AppImage
+           
            sed -i 's/love %f/beefrontend %f\n/g' ./squashfs-root/love.desktop
+           
            "./appimagetool-x86_64.AppImage" squashfs-root ./beefrontend.AppImage
            rm -rf ./love.AppImage
            rm -rf ./beefrontend
