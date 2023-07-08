@@ -21,7 +21,9 @@ jobs:
            cp ./beefrontend/buildtools/love.AppImage ./love.AppImage
            chmod +x ./love.AppImage
            ./love.AppImage --appimage-extract
-           zip -9 -r ./beefrontend.love ./beefrontend/src/
+           cd ./beefrontend/src/
+           zip -9 -r ../../beefrontend.love ./*
+           cd ../..
            cat squashfs-root/bin/love ./beefrontend.love > squashfs-root/bin/beefrontend
            chmod +x squashfs-root/bin/beefrontend
            wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
