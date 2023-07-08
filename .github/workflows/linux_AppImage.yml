@@ -16,6 +16,7 @@ jobs:
     steps:
        - name: Linux
          run: |
+           rm -rf ./beefrontend.AppImage
            git clone --recurse-submodule https://github.com/frc5183/beefrontend/
            cp ./beefrontend/buildtools/love.AppImage ./love.AppImage
            chmod +x ./love.AppImage
@@ -27,6 +28,11 @@ jobs:
            chmod a+x appimagetool-x86_64.AppImage
            sed 's/(?:^|\W)Exec=love %f(?:$|\W)/\nExec=beefrontend %f\n/g' ./squashfs-root/love.desktop
            appimagetool squashfs-root ./beefrontend.AppImage
+           rm -rf ./love.AppImage
+           rm -rf ./beefrontend
+           rm -rf ./appimagetool-x86_64.AppImage
+           rm -rf ./squashfs-root
+           rm -rf ./beefrontend.love
        - name: Artifact AppImage
          uses: actions/upload-artifact@v3
          with:
