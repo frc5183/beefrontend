@@ -37,6 +37,7 @@ jobs:
            sed -i 's/love %f/beefrontend %f\n/g' ./squashfs-root/love.desktop
            rm -rf ./squashfs-root/AppRun
            cp ./beefrontend/buildtools/AppRun ./squashfs-root/AppRun
+           chmod +x ./squashfs-root/AppRun
            "./appimagetool-x86_64.AppImage" squashfs-root ./beefrontend.AppImage
            rm -rf ./love.AppImage
            rm -rf ./beefrontend
