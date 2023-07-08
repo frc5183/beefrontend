@@ -12,10 +12,11 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
        - name: Linux
          run: |
+           sudo apt install sed
            rm -rf ./beefrontend.AppImage
            git clone --recurse-submodule https://github.com/frc5183/beefrontend/
            cp ./beefrontend/buildtools/love.AppImage ./love.AppImage
