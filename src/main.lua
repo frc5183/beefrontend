@@ -16,9 +16,11 @@ function love.load()
 end
 
 function love.mousepressed(x, y, button, istouch, presses) 
-  gui.ClickPulser:mousePressed(x, y, button, presses)
+  gui.TextInput.pre()
+  gui.ClickOrigin:mousePressed(x, y, button, presses)
+  gui.TextInput.post()
   
 end
 function love.mousereleased(x, y, button, istouch, presses)
-  gui.ClickPulser:mouseReleased(x, y, button, presses)
+  gui.ClickOrigin:mouseReleased(x, y, button, presses)
 end
