@@ -22,7 +22,7 @@ jobs:
            wget https://nightly.link/love2d/love/workflows/main/12.0-development/love-linux-x86_64.AppImage.zip
            wget https://nightly.link/love2d/love/workflows/main/12.0-development/love-windows-x64-compat
            wget https://nightly.link/love2d/love/workflows/main/12.0-development/love-macos.zip
-           mv ./love-windows-x64-compat ./love-windowx-x64-compat.zip
+           mv ./love-windows-x64-compat ./love-windows-x64-compat.zip
            unzip ./love-linux-x86_64.AppImage.zip
            unzip ./love-windows-x64-compat.zip
            unzip ./love-12.0-win64.zip
