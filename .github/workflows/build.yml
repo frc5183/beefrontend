@@ -36,14 +36,14 @@ jobs:
            cat ./love-12.0-win64/love.exe ./beefrontend.love > ./love-12.0-win64/beefrontend.exe
            rm ./love-12.0-win64/lovec.exe
            cd ./love-12.0-win64
-           zip ./* ../beefrontend-win-x86_64.zip
+           zip -r ../beefrontend-win-x86_64.zip ./*
            cd ..
            echo "MAC APP"
            mv ./love.app ./beefrontend.app
            rm ./beefrontend.app/Info.plist
            cp ./beefrontend/buildtools/Info.plist ./beefrontend.app/Info.plist
            cp ./beefrontend.love ./beefrontend.app/Contents/REsources/
-           zip ./beefrontend.app ./beefrontend_macOS.zip
+           zip  ./beefrontend_macOS.zip ./beefrontend.app
            echo "LINUX APPIMAGE"
            chmod +x ./love.AppImage
            ./love.AppImage --appimage-extract
