@@ -1,0 +1,75 @@
+# This is a basic workflow to help you get started with Actions
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "master" branch
+  push:
+    branches: [ "master" ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    runs-on: ubuntu-latest
+    steps:
+       - name: Linux
+         run: |
+           echo "SETUP"
+           sudo apt install sed libfuse2
+           git clone --recurse-submodule https://github.com/frc5183/beefrontend/
+           wget https://nightly.link/love2d/love/workflows/main/12.0-development/love-linux-x86_64.AppImage.zip
+           wget https://nightly.link/love2d/love/workflows/main/12.0-development/love-windows-x64-compat
+           wget https://nightly.link/love2d/love/workflows/main/12.0-development/love-macos.zip
+           unzip ./love-linux-x86_64.AppImage.zip
+           unzip ./love-windows-x64-compat.zip
+           unzip ./love-12.0-win64.zip
+           mv ./love-macos.zip ./love-macos2.zip
+           unzip ./love-macos2.zip
+           unzip ./love-macos.zip
+           mv love-linux-x86_64.AppImage ./love.AppImage
+           cd ./beefrontend/src/
+           zip -9 -r ../../beefrontend.love ./*
+           cd ../..
+           echo "WINDOWS ZIP-COMPAT"
+           cat ./love-12.0-win64/love.exe ./beefrontend.love > ./love-12.0-win64/beefrontend.exe
+           rm ./love-12.0-win64/lovec.exe
+           cd ./love-12.0-win64
+           zip ./* ../beefrontend-win-x86_64.zip
+           cd ..
+           echo "MAC APP"
+           mv ./love.app ./beefrontend.app
+           rm ./beefrontend.app/Info.plist
+           cp ./beefrontend/buildtools/Info.plist ./beefrontend.app/Info.plist
+           cp ./beefrontend.love ./beefrontend.app/Contents/REsources/
+           zip ./beefrontend.app ./beefrontend_macOS.zip
+           echo "LINUX APPIMAGE"
+           chmod +x ./love.AppImage
+           ./love.AppImage --appimage-extract
+           cat squashfs-root/bin/love ./beefrontend.love > squashfs-root/bin/beefrontend
+           chmod +x squashfs-root/bin/beefrontend
+           wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+            chmod a+x appimagetool-x86_64.AppImage
+           sed -i "s/love/beefrontend\n/g" ./squashfs-root/AppRun
+           sed -i 's/love %f/beefrontend %f\n/g' ./squashfs-root/love.desktop
+           rm -rf ./squashfs-root/AppRun
+           cp ./beefrontend/buildtools/AppRun ./squashfs-root/AppRun
+           chmod +x ./squashfs-root/AppRun
+           "./appimagetool-x86_64.AppImage" squashfs-root ./beefrontend-x86_64.AppImage
+
+       - name: Artifact AppImage
+         uses: actions/upload-artifact@v3
+         with:
+            name: beefrontend-x86_64.AppImage
+            path: beefrontend-x86_64.AppImage
+       - name: Artifact Win amd64
+         uses: actions/upload-artifact@v3
+         with:
+            name: beefrontend-win-x86_64.zip
+            path: beefrontend-win-x86_64.zip
+       - name: Artifact Macos
+         uses: actions/upload-artifact@v3
+         with:
+            name: beefrontend_macOS.zip
+            path: beefrontend_macOS.zip
