@@ -29,7 +29,6 @@ jobs:
            mv ./love-macos.zip ./love-macos2.zip
            unzip ./love-macos2.zip
            unzip ./love-macos.zip
-           mv love-linux-x86_64.AppImage ./love.AppImage
            cd ./beefrontend/src/
            zip -9 -r ../../beefrontend.love ./*
            cd ../..
