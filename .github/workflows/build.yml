@@ -25,6 +25,7 @@ jobs:
            unzip ./love-linux-x86_64.AppImage.zip
            unzip ./love-windows-x64-compat.zip
            unzip ./love-12.0-win64.zip
+           mv ./love-*.AppImage ./love.AppImage
            mv ./love-macos.zip ./love-macos2.zip
            unzip ./love-macos2.zip
            unzip ./love-macos.zip
