@@ -40,9 +40,9 @@ jobs:
            cd ..
            echo "MAC APP"
            mv ./love.app ./beefrontend.app
-           rm ./beefrontend.app/Info.plist
-           cp ./beefrontend/buildtools/Info.plist ./beefrontend.app/Info.plist
-           cp ./beefrontend.love ./beefrontend.app/Contents/REsources/
+           rm ./beefrontend.app/Contents/Info.plist
+           cp ./beefrontend/buildtools/Info.plist ./beefrontend.app/Contents/Info.plist
+           cp ./beefrontend.love ./beefrontend.app/Contents/Resources/
            zip  ./beefrontend_macOS.zip ./beefrontend.app
            echo "LINUX APPIMAGE"
            chmod +x ./love.AppImage
