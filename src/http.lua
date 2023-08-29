@@ -1,9 +1,6 @@
-local http = require"socket.http"
 local https = require"https"
-local dump = require"lib.dump"
 local settings = require"state.settings"
 local json = require"lib.external.json"
-local ltn12 = require"ltn12"
 local requester = {}
 local token
 local cookie

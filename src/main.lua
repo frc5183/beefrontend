@@ -1,9 +1,8 @@
-local log = require"lib.log"
-local state = require"lib.state"
-local http = require"http"
-local gui = require"lib.gui"
-local menu = require "state.menu"
-require"lib.math2".integrate(math)
+local state = require "lib.state"
+local assetloader = require "lib.assetloader"
+local Sizer = require "lib.gui.subsystem.Sizer"
+local menu = require"state.menu"
+require "lib.math2".integrate(math)
 local om = love.mouse.getPosition
 function love.mouse.getPosition()
   local x, y = om()
@@ -11,16 +10,24 @@ function love.mouse.getPosition()
   y = y or -1
   return x, y
 end
+
 function love.load()
-  state.switch(menu)
+  assetloader.start()
+  Sizer.init(720, 1280)
 end
 
-function love.mousepressed(x, y, button, istouch, presses) 
-  gui.TextInput.pre()
-  gui.ClickOrigin:mousePressed(x, y, button, presses)
-  gui.TextInput.post()
-  
+function love.update(dt)
+  assetloader.update()
+  if assetloader.isFinished() then
+    print("FINISHED")
+    for k, v in pairs(menu) do print(k, v) end
+    menu.load()
+    state.switch(menu)
+  end
 end
-function love.mousereleased(x, y, button, istouch, presses)
-  gui.ClickOrigin:mouseReleased(x, y, button, presses)
+
+function love.draw()
+  Sizer.begin()
+  love.graphics.print("Loading")
+  Sizer.finish()
 end
