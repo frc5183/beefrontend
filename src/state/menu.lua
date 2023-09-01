@@ -53,7 +53,6 @@ local function load()
         end
       end
       r, c, h, resbody = http.complete("POST", "/users/login", {}, json.decode(content), false)
-      log.info("HTTP Response Code: " .. (c or ""))
       if c == 200 then
         if not (h.Authorization or h.authorization) then
           wait(0.05, function()
@@ -65,7 +64,7 @@ local function load()
         end
         http.setToken(h.Authorization or h.authorization)
 
-        wait(0.05, function() state.switch(list) end)
+        wait(0.05, function() list.load() state.switch(list) end)
       else
         wait(0.05, function()
           err.load()

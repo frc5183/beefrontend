@@ -25,7 +25,7 @@ local function load()
   -- Button Callbacks
   err.back:onClick(function(pt, button, presses)
     if (err.back:contains(pt) and button == 1) then
-      wait(0.05, function() oldState.load() for k, v in pairs(oldState) do print(k, v) end state.switch(oldState) end)
+      wait(0.05, function() oldState.load() state.switch(oldState) end)
     end
   end)
 

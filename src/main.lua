@@ -19,8 +19,6 @@ end
 function love.update(dt)
   assetloader.update()
   if assetloader.isFinished() then
-    print("FINISHED")
-    for k, v in pairs(menu) do print(k, v) end
     menu.load()
     state.switch(menu)
   end

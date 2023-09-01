@@ -1,176 +1,178 @@
 -- Imports
-local http = require"http"
-local settings = require"state.settings"
-local state = require"lib.state"
-local dump = require"lib.dump"
-local json = require"lib.external.json"
-local err = require"state.error"
-local item = require"state.item"
-local flux = require"lib.external.flux"
-local log = require"lib.log"
-local wait = require"lib.wait"
-local gui = require"lib.gui"
--- State Info and Basic Content
-local list = {
-  name="list",
-  title = gui.TextButton(20, 20, 200, 50, gui.Color(0, 0, 1, 1), "Items: ", 18, "center"),
-  refresh = gui.TextButton(20, 70, 200, 50, gui.Color(0, 0, 1 ,1), "Refresh", 18, "center"),
-  up = gui.TextButton(20, 120, 200, 50, gui.Color(0, 0, 1, 1), "Scroll Up", 18, "center"),
-  down = gui.TextButton(20, 670, 200, 50, gui.Color(0, 0, 1, 1), "Scroll Down", 18, "center"),
-  back = gui.TextButton(20, 720, 200, 50, gui.Color(0, 0, 1, 1), "Back", 18, "center")
-}
-for k=0, 9 do 
-  list["item" .. (k+1)] = gui.TextButton(20, 170+(k*50), 200, 50, gui.Color(0, 0, 1, 1), "Item Placeholder " .. (k+1), 18, "center")
-      
-end
--- Local Shared Variables
-local items={}
-local items_lookup={}
-local start=1
+local http = require "http"
+local state = require "lib.state"
+local math2 = require "lib.math2"
+local json = require "lib.external.json"
+local err = require "state.error"
+local item = require "state.item"
+local flux = require "lib.external.flux"
+local wait = require "lib.wait"
+local gui = require "lib.gui"
+local menu
 local canEdit = true
-local enabled = false
-local main
--- Item Configurations and Load Functions
-item.setCanEdit(canEdit)
+---@type table
+local items
+local list = {}
 item.setList(list)
-item.load()
-local function refresh () 
-
-  local r, c, h, resbody = http.complete("GET", "/items/all", {}, {}, true)
-  log.info("HTTP Response Code: " .. c or "")
-  start=1
-  
+---@type Container
+local container
+---@type boolean
+local initial = true
+---@type integer
+local adjust = 0
+local function load()
+  local list_builder = gui.List(0, 40, 120, 660, 1140, gui.Color(0, 1, 0, 1), 0)
+  local _list = {
+    name = "list",
+    back = gui.TextButton(40, 20, 320, 50, gui.Color(0, 1, 0, 1), "Back", 18, "center"),
+    refresh = gui.TextButton(40, 70, 320, 50, gui.Color(0, 1, 0, 1), "Refresh", 18, "center"),
+    left = gui.TextButton(360, 20, 320, 50, gui.Color(0, 1, 0, 1), "Page Left", 18, "center"),
+    right = gui.TextButton(360, 70, 320, 50, gui.Color(0, 1, 0, 1), "Page Right", 18, "center")
+  }
+  if (not initial) then
+    ---Response
+    ---@type number
+    local r
+    ---Response Code (equal to r)
+    ---@type number
+    local c
+    ---Response Headers
+    ---@type table
+    local h
+    ---Response Body
+    ---@type table
+    local resbody
+    local r, c, h, resbody = http.complete("GET", "/items/all", {}, {}, true)
+    ---@type table
     local t
-    pcall(function () t = json.decode(resbody)
-  end)
-  if not (t) then 
-    pcall(function ()
-          err.setState(list)
-          err.title:setText("ERROR")
-          err.err:setText("Invalid Response Body")
-        end)
-        wait(0.05, function() state.switch(err) end)
-    
-  elseif c==200 then
-    
-      items=t.data
-      if not items then items={} end
-    
-  for k, v in pairs(items) do items_lookup[v]=k end
-  
-  for k=1, math.min(#items, 10) do 
-    list["item" .. (k)]:setText(items[k].name)
-    list["item" .. (k)].item = items[k]
-    if (list["item" .. (k)].oldid~=nil) then 
-      local t=list["item" .. (k)].oldid
-      
-      list["item" .. (k)]:removeOnClick( t )
-    end
-    list["item" .. (k)].oldid = list["item" .. (k)]:onClick(function (pt, button, presses)
-        if (enabled and list["item" .. (k)]:contains(pt) and button==1) then
-          item.setActiveItem(list["item" .. (k)].item)
-          item.reload()
-          wait(0.05, function () state.switch(item) end)
-        end
+    pcall(function() t = json.decode(resbody) end)
+    if not (t) then
+      wait(0.05, function()
+        err.load()
+        err.title:setText("ERROR")
+        err.err:setText("Invalid Response Body")
+        err.setState(list)
+        state.switch(err)
       end)
-    end
-  
-  list.items_list = items
-list.items_lookup = items_lookup
-else 
-pcall(function ()
-          err.setState(list)
-          local resbody = json.decode(resbody)
-          err.title:setText(resbody.status)
-          err.err:setText(resbody.message)
+      return
+    else
+      items = t.data
+      if (type(items) ~= "table") then
+        items = {}
+      end
+      for k = adjust + 1, math.min(adjust + 50, #items) do
+        local newbutton = list_builder.TextButton(640, 50, gui.Color(0, 1, 0, 1), "PLACEHOLDER", 18, "center")
+        local newitem = items[k]
+        newbutton:setText(newitem.name)
+        newbutton:onClick(function(pt, button, presses)
+          if (newbutton:contains(pt) and button == 1) then
+            item.setActiveItem(newitem)
+            item.load(false)
+            wait(0.05, function() state.switch(item) end)
+          end
         end)
-        wait(0.05, function() state.switch(err) end)
-end
-end
-list.reset=refresh
-local function up() 
-  if (items_lookup[list.item1.item]==1) then return end
-  for k=1, 10 do
-    local item = list["item" .. (k)]
-    local indexitem = items_lookup[item.item]
-    if not indexitem then return end
-    item:setText(items[indexitem-1].name)
-    item.item = items[indexitem-1]
-  end
-end
-local function down()
-  if (items_lookup[list.item10.item]==#items) or #items<10 then return end
-  for k=1, 10 do
-    local item = list["item" .. (k)]
-    local indexitem = items_lookup[item.item]
-    if not indexitem then return end
-    item:setText(items[indexitem+1].name)
-    item.item = items[indexitem+1]
-  end
-end
-
-
-
-list.items_list = items
-list.items_lookup = items_lookup
-if (canEdit) then
-  
-  list.newitem = gui.TextButton(240, 120, 200, 50, gui.Color(0, 0, 1, 1), "New Item", 18, "center")
-list.newitem:onClick(function (pt, button, presses)
-    if (enabled and list.newitem:contains(pt) and button==1) then
-      
-    item.setNewMode(true)
-    item.reload()
-    wait(0.05, function () state.switch(item) end)
+      end
+      if (canEdit) then
+        local newitem = list_builder.TextButton(640, 50, gui.Color(0, 1, 0, 1), "New Item", 18, "center")
+        newitem:onClick(function(pt, button, presses)
+          if (newitem:contains(pt) and button == 1) then
+            item.load(true)
+            wait(0.05, function() state.switch(item) end)
+          end
+        end)
+      end
     end
   end
-)
-end
-
--- Button Callbacks
-list.refresh:onClick(function (pt, button) if (enabled and list.refresh:contains(pt) and button==1) then refresh() end end)
-list.up:onClick(function (pt, button) if (enabled and list.up:contains(pt) and button==1) then up() end end)
-list.down:onClick(function (pt, button) if (enabled and list.down:contains(pt) and button==1) then down() end end)
-list.back:onClick(function (pt, button) if (enabled and list.back:contains(pt) and button==1) then 
-    wait(0.05, function () state.switch(main) end)
-     end end)
-
---State Switch Functions
-list.switchto = function () enabled=true
-  refresh() end
-list.switchaway = function () enabled=false  end
--- State Love2D Functions
-function list.mousemoved() end
-function list.textinput() end
-function list.keypressed() end
-function list.wheelmoved() end
-function list.draw() 
-  list.back:draw()
-  list.up:draw()
-  list.down:draw()
-  list.refresh:draw()
-  if (canEdit) then list.newitem:draw() end
-  for k=1, 10 do
-    local item = list["item" .. (k)]
-    item:draw()
+  container = gui.Container(0, 0, 720, 1280, gui.Color(0, 1, 0, 1), 720, 1280)
+  container:add(list_builder.construct())
+  local b = _list.back
+  b:onClick(function(pt, button, presses)
+    if (b:contains(pt) and button == 1) then
+      menu.load()
+      wait(0.05, function() state.switch(menu) end)
+    end
+  end)
+  container:add(b)
+  local b = _list.refresh
+  b:onClick(function(pt, button, presses)
+    if (b:contains(pt) and button == 1) then
+      load()
+    end
+  end)
+  container:add(b)
+  local b = _list.right
+  b:onClick(function(pt, button, presses)
+    if (b:contains(pt) and button == 1) then
+      if (adjust + 50 < #items) then
+        adjust = adjust + 50
+      end
+      load()
+    end
+  end)
+  container:add(b)
+  local b = _list.left
+  b:onClick(function(pt, button, presses)
+    if (b:contains(pt) and button == 1) then
+      if (adjust - 50 >= 0) then
+        adjust = adjust - 50
+      end
+      load()
+    end
+  end)
+  container:add(b)
+  for k, v in pairs(_list) do
+    list[k]=v
   end
-end
-function list.update(dt)
-  wait.update()
-  flux.update(dt)
-  local pt = math.Point2D(love.mouse.getPosition())
-  list.back:update(dt, pt)
-  list.up:update(dt, pt)
-  list.down:update(dt, pt)
-  list.refresh:update(dt, pt)
-  if (canEdit) then list.newitem:update(dt, pt) end
-  for k=1, 10 do
-    local item = list["item" .. (k)]
-    item:update(dt, pt)
+  function list.draw()
+    gui.Sizer.begin()
+    container:draw()
+    gui.Sizer.finish()
   end
-end
--- State Data-Chain Functions
-list.setMenu = function (m) main=m  item.setMain(main) end
 
---Return State
+  function list.update(dt)
+    wait.update()
+    local x, y = love.mouse.getPosition()
+    local x, y = gui.Sizer.translate(x, y)
+    local pt = math2.Point2D(x, y)
+    flux.update(dt)
+    container:update(dt, pt)
+  end
+
+  function list.mousemoved(x, y, dx, dy, istouch)
+    local x, y = gui.Sizer.translate(x, y)
+    local dx, dy = gui.Sizer.scale(dx, dy)
+    container:mousemoved(x, y, dx, dy, istouch)
+  end
+
+  function list.keypressed(key, scancode, isRepeat)
+    container:keypressed(key, scancode, isRepeat)
+  end
+
+  function list.textinput(text)
+    container:textinput(text)
+  end
+
+  function list.wheelmoved(dx, dy, x, y)
+    local x, y = gui.Sizer.translate(x, y)
+    container:wheelmoved(dx, dy, x, y)
+  end
+
+  function list.mousepressed(x, y, button, istouch, presses)
+    local x, y = gui.Sizer.translate(x, y)
+    container:press(math2.Point2D(x, y), button, presses)
+  end
+
+  function list.mousereleased(x, y, button, istouch, presses)
+    local x, y = gui.Sizer.translate(x, y)
+    container:click(math2.Point2D(x, y), button, presses)
+  end
+
+  -- State Data-Chain Functions
+  list.setMenu = function(m)
+    menu = m
+  end
+  initial = false
+  list.load=load
+end
+load()
 return list

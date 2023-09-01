@@ -79,11 +79,12 @@ local function load()
   settings.save:onClick(function(pt, button, presses)
     if (settings.save:contains(pt) and button == 1) then
       local zerotrust
-      local str = json.encode { secret = settings.secrettext:getText(), zerotrust = settings._zerotrust, id = settings
+      local str = json.encode { secret = settings.secretText:getText(), zerotrust = settings._zerotrust, id = settings
           .idText:getText(), password = settings.passText:getText(), username = settings.userText:getText(), url =
           settings
           .urlText:getText() }
       love.filesystem.remove("settings.json")
+---@diagnostic disable-next-line: undefined-field
       local f = love.filesystem.openFile("settings.json", "a")
       f:write(str)
       f:flush()

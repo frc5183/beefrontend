@@ -1,229 +1,205 @@
 -- Imports
-local http = require"http"
-local settings = require"state.settings"
-local state = require"lib.state"
-local dump = require"lib.dump"
-local json = require"lib.external.json"
-local flux = require"lib.external.flux"
-local wait = require"lib.wait"
-local err = require"state.error"
-local log = require"lib.log"
-local gui = require"lib.gui"
--- State Info and Basic Content
-local item = {
-  name="item",
-}
--- Local Shared Variables
-local activeItem={
-  name="New Item",
+local http = require "http"
+local state = require "lib.state"
+local json = require "lib.external.json"
+local flux = require "lib.external.flux"
+local wait = require "lib.wait"
+local err = require "state.error"
+local math2 = require "lib.math2"
+local canEdit = true
+local list
+local gui = require "lib.gui"
+---@type table
+local activeItem = {
+  name = "New Item",
   price = "0",
-  id="ID Available After Creation",
+  id = "ID Available After Creation",
   photo = "photo",
   retailer = "retailer",
-  description="description",
-  partNumber="0x000000"
+  description = "description",
+  partNumber = "0x000000"
 }
-local enabled = false
-local newMode = false
-local list 
-local refresh
-local main
-local token
-local canEdit
-local id
--- State Load Functions
-item.load = function ()
-  if (item.price) then return end
+---@type table
+local item = {}
+---@type Container
+local container
+
+local function newitem()
+  return {
+    name = "New Item",
+    price = "0",
+    id = "ID Available After Creation",
+    photo = "photo",
+    retailer = "retailer",
+    description = "description",
+    partNumber = "0x000000"
+  }
+end
+---@param isNew boolean
+local function load(isNew)
+  if isNew then activeItem = newitem() end
+  local list_builder = gui.List(0, 40, 120, 660, 1140, gui.Color(0, 1, 0, 1), 0)
+  local save
   local func
-  if (canEdit) then func = gui.TextInput else func = gui.TextButton end
-  item.title = func(20, 20, 200, 50, gui.Color(0, 0, 1, 1), activeItem.name, 18, "left", "normal")
-    item.checkouts = gui.TextButton(20, 70, 200, 50, gui.Color(0, 0, 1, 1), "Checkouts", 18, "center")
-  item.price = gui.TextButton(20, 120, 200, 50, gui.Color(0, 0, 1, 1), "Price", 18, "center")
-  item.pricetext = func(20, 170, 200, 50, gui.Color(0, 0, 1, 1), activeItem.price, 18, "left", "normal")
-  item.id = gui.TextButton(20, 220, 200, 50, gui.Color(0, 0, 1, 1), "ID: " .. activeItem.id, 18, "center")
-  item.photo = gui.TextButton(20, 270, 200, 50, gui.Color(0, 0, 1, 1), "Photo Link", 18, "center")
-  item.phototext = func(20, 320, 200, 50, gui.Color(0, 0, 1, 1), activeItem.photo, 18, "left", "normal")
-  item.part = gui.TextButton(20, 370, 200, 50, gui.Color(0, 0, 1, 1), "Part Number", 18, "center")
-  item.parttext = func(20, 420, 200, 50, gui.Color(0, 0, 1, 1), activeItem.partNumber, 18, "left", "normal")
-  item.retailer = gui.TextButton(20, 470, 200, 50, gui.Color(0, 0, 1, 1), "Retailer", 18, "center")
-  item.retailertext = func(20, 520, 200, 50, gui.Color(0, 0, 1, 1), activeItem.retailer, 18, "left", "normal")
-  item.description = func(20, 570, 200, 50, gui.Color(0, 0, 1, 1), activeItem.description, 18, "left", "normal")
+  local func2
   if (canEdit) then
-  item.save = gui.TextButton(20, 620, 200, 50, gui.Color(0, 0, 1, 1), "Save Item", 18, "center")
-  item.save:onClick(function (pt, button, presses)
-  if (enabled and item.save:contains(pt) and button==1) then 
-    local r, c, h, resbody
-    if (not newMode) then
-      list.items_list[id].photo = item.phototext:getText()
-      list.items_list[id].retailer = item.retailertext:getText()
-      list.items_list[id].description = item.description:getText()
-      list.items_list[id].price = item.pricetext:getText()
-      list.items_list[id].name=item.title:getText()
-      list.items_list[id].partNumber=item.parttext:getText()
-      r, c, h, resbody = http.complete("PATCH", "/items/" .. id, nil, list.items_list[id], true)
-      if c ~= 200 then 
-        pcall(function ()
-          err.setState(list)
-          local resbody = json.decode(resbody)
-          err.title:setText(resbody.status)
-          err.err:setText(resbody.message)
-        end)
-        wait(0.05, function() state.switch(err) end)
+    func = list_builder.TextInput
+    func2 = gui.TextInput
+    save = gui.TextButton(40, 20, 640, 50, gui.Color(0, 1, 0, 1), "Save Item", 18, "center")
+  else
+    func = list_builder.TextRectangle
+    func2 = gui.TextRectangle
+  end
+  local _texts = {}
+  local _item = {
+    name="item",
+    save = save,
+    back = gui.TextButton(40, 70, 640, 50, gui.Color(0, 1, 0, 1), "Back", 18, "center"),
+    title = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.name, 18, "left", "normal"),
+    price = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1), "Price", 18, "center"),
+    priceText = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.price, 18, "left", "normal"),
+    id = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1), "ID: " .. activeItem.id, 18, "center"),
+    photo = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1),
+      "Photo RawData (Future will have image-taking and display)", 18, "center"),
+    photoText = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.photo, 18, "left", "normal"),
+    part = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1), "Part Number", 18, "center"),
+    partText = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.partNumber or "", 18, "left", "normal"),
+    retailer = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1), "Retailer", 18, "center"),
+    retailerText = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.retailer, 18, "left", "normal"),
+    description = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.description, 18, "left", "normal"),
+  }
+  container = gui.Container(0, 0, 720, 1280, gui.Color(0, 1, 0, 1), 720, 1280)
+  container:add(list_builder.construct())
+  container:add(_item.back)
+  for k, v in pairs(_item) do
+    item[k] = v
+  end
+  if save then
+    container:add(_item.save)
+    table.insert(_texts, _item.title)
+    table.insert(_texts, _item.priceText)
+    table.insert(_texts, _item.photoText)
+    table.insert(_texts, _item.partText)
+    table.insert(_texts, _item.retailerText)
+    table.insert(_texts, _item.description)
+    save:onClick(function(pt, button, presses)
+      if (save:contains(pt) and button == 1) then
+        local r, c, h, resbody
+        if isNew then
+          local out = {
+            photo = _item.photoText:getText(),
+            retailer = _item.retailerText:getText(),
+            description = _item.retailerText:getText(),
+            price = _item.priceText:getText(),
+            name = item.title:getText(),
+            partNumber = item.partText:getText(),
+            checkout = "",
+            checkouts = ""
+          }
+          r, c, h, resbody = http.complete("POST", "/items/new", nil, out, true)
+          if (c ~= 201) then
+            pcall(function()
+              err.setState(list)
+              err.load()
+              local resbody = json.decode(resbody)
+              err.title:setText(resbody.status)
+              err.err:setText(resbody.message)
+              state.switch(err)
+            end)
+            wait(0.05, function() state.switch(err) end)
+          else
+            list.load()
+            wait(0.05, function() state.switch(list) end)
+          end
+        else
+          local out = {
+            photo = _item.photoText:getText(),
+            retailer = _item.retailerText:getText(),
+            description = _item.retailerText:getText(),
+            price = _item.priceText:getText(),
+            name = item.title:getText(),
+            partNumber = item.partText:getText(),
+            checkout = activeItem.checkout or "",
+            checkouts = activeItem.checkouts or ""
+          }
+          r, c, h, resbody = http.complete("PATCH", "/items/" .. activeItem.id, nil, activeItem.id, true)
+          if c ~= 200 then
+            pcall(function()
+              err.setState(list)
+              err.load()
+              local resbody = json.decode(resbody)
+              err.title:setText(resbody.status)
+              err.err:setText(resbody.message)
+            end)
+            wait(0.05, function() state.switch(err) end)
+          end
+        end
       end
-      log.info("HTTP Response Code: " .. c or ""  )
-    else 
-      local out = {photo=item.phototext:getText(), retailer=item.retailertext:getText(), description=item.description:getText(), price=item.pricetext:getText(), name=item.title:getText(), partNumber=item.parttext:getText(), checkout="", checkouts=""}
-      r, c, h, resbody = http.complete("POST", "/items/new", nil, out, true)
-      if c ~= 201 then 
-        pcall(function ()
-      err.setState(list)
-      local resbody = json.decode(resbody)
-      err.title:setText(resbody.status)
-      err.err:setText(resbody.message)
-      end)
-        list.reset()
-        wait(0.05, function() state.switch(err) end)
-      else
-        log.info("HTTP Response Code: " .. c or "")
- 
-        list.reset()
-        wait(0.05, function () state.switch(list) end)
-      end
-    end
+    end)
+  end
+  _item.back:onClick(function(pt, button, presses)
+    if (_item.back:contains(pt) and button == 1) then
+      list.load()
+      wait(0.05, function() state.switch(list) end)
     end
   end)
-end
-  item.back = gui.TextButton(20, 670, 200, 50, gui.Color(0, 0, 1 ,1), "Back", 18, "center")
-  item.back:onClick(function (pt, button, pushes)
-      if (enabled and item.back:contains(pt) and button==1) then
-        wait(0.05, function () state.switch(list) end)
-      end
-  end)
-end
+  function item.draw()
+    gui.Sizer.begin()
+    container:draw()
+    gui.Sizer.finish()
+  end
 
-item.reload = function () 
-  
-  if (newMode) then activeItem={
-      name="New Item",
-      price = "0",
-      id="ID Available After Creation",
-      photo = "photo",
-      retailer = "retailer",
-      description="description",
-      partNumber="0x000000"
-      }
-    end
-  item.title:setText(activeItem.name)
-  item.pricetext:setText(tostring(activeItem.price))
-  item.id:setText("ID: " .. activeItem.id)
-  item.phototext:setText(activeItem.photo)
-  item.retailertext:setText(activeItem.retailer)
-  item.description:setText(activeItem.description)
-  item.parttext:setText(activeItem.partNumber or "")
-  id=activeItem.id
-end
--- State Switch Functions
-item.switchto = function () enabled=true
-  if (canEdit) then
-  item.pricetext:enable()
-  item.phototext:enable()
-  item.retailertext:enable()
-  item.description:enable()
-  item.parttext:enable()
-  item.title:enable()
-  end
-  end
-item.switchaway = function ()
-  enabled=false
-  if (canEdit) then
-  item.pricetext:disable()
-  item.phototext:disable()
-  item.retailertext:disable()
-  item.description:disable()
-  item.parttext:disable()
-  item.title:disable()
-  end
-  newMode=false end
--- State Love2D Functions
-item.update = function (dt)
-  wait.update()
-    local pt = math.Point2D(love.mouse.getPosition())
+  function item.update(dt)
+    wait.update()
+    local x, y = love.mouse.getPosition()
+    local x, y = gui.Sizer.translate(x, y)
+    local pt = math2.Point2D(x, y)
     flux.update(dt)
-    item.back:update(dt, pt)
-    if (canEdit) then
-      item.save:update(dt, pt)
-      item.pricetext:update(dt, pt)
-      item.phototext:update(dt, pt)
-      item.retailertext:update(dt, pt)
-      item.description:update(dt, pt)
-      item.parttext:update(dt, pt)
-      item.title:update(dt, pt)
+    container:update(dt, pt)
+  end
+
+  function item.mousemoved(x, y, dx, dy, istouch)
+    local x, y = gui.Sizer.translate(x, y)
+    local dx, dy = gui.Sizer.scale(dx, dy)
+    container:mousemoved(x, y, dx, dy, istouch)
+  end
+
+  function item.keypressed(key, scancode, isRepeat)
+    container:keypressed(key, scancode, isRepeat)
+  end
+
+  function item.textinput(text)
+    container:textinput(text)
+  end
+
+  function item.wheelmoved(dx, dy, x, y)
+    local x, y = gui.Sizer.translate(x, y)
+    container:wheelmoved(dx, dy, x, y)
+  end
+
+  function item.mousepressed(x, y, button, istouch, presses)
+    local x, y = gui.Sizer.translate(x, y)
+    container:press(math2.Point2D(x, y), button, presses)
+  end
+
+  function item.mousereleased(x, y, button, istouch, presses)
+    local x, y = gui.Sizer.translate(x, y)
+    container:click(math2.Point2D(x, y), button, presses)
+  end
+
+  item.switchto = function()
+    for k, v in ipairs(_texts) do
+      v:enable()
     end
   end
-
-function item.mousemoved(x, y, dx, dy, istouch)
-  if (canEdit) then
-    item.pricetext:mousemoved(x, y)
-    item.phototext:mousemoved(x, y)
-    item.retailertext:mousemoved(x, y)
-    item.description:mousemoved(x, y)
-    item.parttext:mousemoved(x, y)
-    item.title:mousemoved(x, y)
+  item.switchaway = function()
+    for k, v in ipairs(_texts) do
+      v:disable()
+    end
   end
+  item.load = load
+  item.setList = function(List) list = List end
+  item.setActiveItem = function(newItem) activeItem = newItem end
 end
-function item.textinput(text)
-  if (canEdit) then
-    item.pricetext:textinput(text)
-    item.phototext:textinput(text)
-    item.retailertext:textinput(text)
-    item.description:textinput(text)
-    item.parttext:textinput(text)
-    item.title:textinput(text)
-  end
-end
-function item.keypressed(key, scancode, isrepeat)
-  if (canEdit) then
-    item.pricetext:keypressed(key, scancode, isrepeat)
-    item.phototext:keypressed(key, scancode, isrepeat)
-    item.retailertext:keypressed(key, scancode, isrepeat)
-    item.description:keypressed(key, scancode, isrepeat)
-    item.parttext:keypressed(key, scancode, isrepeat)
-    item.title:keypressed(key, scancode, isrepeat)
-  end
-end
-function item.wheelmoved(dx, dy)
-  if (canEdit) then
-    item.pricetext:wheelmoved(dx, dy)
-    item.phototext:wheelmoved(dx, dy)
-    item.retailertext:wheelmoved(dx, dy)
-    item.description:wheelmoved(dx, dy)
-    item.parttext:wheelmoved(dx, dy)
-    item.func:wheelmoved(dx, dy)
-  end
-end
-function item.draw()
-  
-  item.price:draw()
-  item.pricetext:draw()
-  item.id:draw()
-  item.photo:draw()
-  item.phototext:draw()
-  item.retailer:draw()
-  item.retailertext:draw()
-  item.description:draw()
-  item.parttext:draw()
-  item.part:draw()
-  item.back:draw()
-  item.title:draw()
-  if (not newMode) then item.checkouts:draw() end
-  if item.save then item.save:draw() end
-end
--- State Data-Chain Functions
-item.setMain = function(Main) main=Main end
-item.setList = function(List) list=List end
-item.setActiveItem = function(newItem) activeItem=newItem end
-item.setCanEdit = function(edit) canEdit=edit end
-item.setNewMode = function(val) newMode=val end
-
---Return State
+load(false)
 return item

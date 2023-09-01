@@ -1,6 +1,7 @@
 local https = require"https"
 local settings = require"state.settings"
 local json = require"lib.external.json"
+local log = require"lib.log"
 local requester = {}
 local token
 local cookie
@@ -27,6 +28,7 @@ function requester.complete(method, endpoint, headers, content, addToken)
   end
   local c, out, h = https.request(settings.urlText:getText() .. endpoint, {data=json.encode(content), method=method, headers=headers})
   local r = c
+  log.info("HTTP Response Code: " .. (c or ""))
   return r, c, h, out
 end
 return requester
