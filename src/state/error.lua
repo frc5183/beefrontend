@@ -5,27 +5,34 @@ local gui = require "lib.gui"
 local wait = require "lib.wait"
 local flux = require "lib.external.flux"
 local math2 = require "lib.math2"
+local constant = require "constant"
 local err = {}
 local oldState
 ---@type Container
 local container
 local function load()
-  local list_builder = gui.List(0, 40, 20, 660, 1260, gui.Color(0, 1, 0, 0), 0)
+  local list_builder = gui.List(0, 40, 20, 660, 1260, constant.buttonForegroundColor, 10)
   local _err = {
     name = "err",
-    title = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1), "ERROR", 18, "center"),
-    err = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1), "ERROR", 18, "center"),
-    back = list_builder.TextButton(640, 50, gui.Color(0, 1, 0, 1), "Back", 18, "center")
+    title = list_builder.TextRectangle(640, 50, constant.buttonForegroundColor, "ERROR", 18, "center", constant
+      .textColor, constant.buttonBackgroundColor),
+    err = list_builder.TextRectangle(640, 50, constant.buttonForegroundColor, "ERROR", 18, "center", constant.textColor,
+      constant.buttonBackgroundColor),
+    back = list_builder.TextButton(640, 50, constant.buttonForegroundColor, "Back", 18, "center", constant.textColor,
+      constant.buttonBackgroundColor)
   }
   for k, v in pairs(_err) do
     err[k] = v
   end
-  container = gui.Container(0, 0, 720, 1280, gui.Color(0, 1, 0, 1), 720, 1280)
+  container = gui.Container(0, 0, 720, 1280, constant.buttonForegroundColor, 720, 1280)
   container:add(list_builder.construct())
   -- Button Callbacks
   err.back:onClick(function(pt, button, presses)
     if (err.back:contains(pt) and button == 1) then
-      wait(0.05, function() oldState.load() state.switch(oldState) end)
+      wait(0.05, function()
+        oldState.load()
+        state.switch(oldState)
+      end)
     end
   end)
 
