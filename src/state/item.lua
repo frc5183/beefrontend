@@ -6,6 +6,7 @@ local flux = require "lib.external.flux"
 local wait = require "lib.wait"
 local err = require "state.error"
 local math2 = require "lib.math2"
+local constant = require "constant"
 local canEdit = true
 local list
 local gui = require "lib.gui"
@@ -38,37 +39,42 @@ end
 ---@param isNew boolean
 local function load(isNew)
   if isNew then activeItem = newitem() end
-  local list_builder = gui.List(0, 40, 120, 660, 1140, gui.Color(0, 1, 0, 1), 0)
+  local list_builder = gui.List(0, 40, 20, 660, 1140, constant.buttonForegroundColor, 10)
   local save
   local func
   local func2
+  local a, b, c
   if (canEdit) then
     func = list_builder.TextInput
-    func2 = gui.TextInput
-    save = gui.TextButton(40, 20, 640, 50, gui.Color(0, 1, 0, 1), "Save Item", 18, "center")
+    a = "normal"
+    b = constant.textColor
+    c = constant.buttonBackgroundColor
+    save = list_builder.TextButton(640, 50, constant.buttonForegroundColor, "Save Item", 18, "center", b, c)
   else
     func = list_builder.TextRectangle
-    func2 = gui.TextRectangle
+    a = constant.textColor
+    b = constant.buttonBackgroundColor
+    c = nil
   end
   local _texts = {}
   local _item = {
-    name="item",
+    name = "item",
     save = save,
-    back = gui.TextButton(40, 70, 640, 50, gui.Color(0, 1, 0, 1), "Back", 18, "center"),
-    title = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.name, 18, "left", "normal"),
-    price = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1), "Price", 18, "center"),
-    priceText = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.price, 18, "left", "normal"),
-    id = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1), "ID: " .. activeItem.id, 18, "center"),
-    photo = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1),
-      "Photo RawData (Future will have image-taking and display)", 18, "center"),
-    photoText = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.photo, 18, "left", "normal"),
-    part = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1), "Part Number", 18, "center"),
-    partText = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.partNumber or "", 18, "left", "normal"),
-    retailer = list_builder.TextRectangle(640, 50, gui.Color(0, 1, 0, 1), "Retailer", 18, "center"),
-    retailerText = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.retailer, 18, "left", "normal"),
-    description = func(640, 50, gui.Color(0, 1, 0, 1), activeItem.description, 18, "left", "normal"),
+    back = list_builder.TextButton(640, 50, constant.buttonForegroundColor, "Back", 18, "center", b, c),
+    title = func(640, 50, constant.buttonForegroundColor, activeItem.name, 18, "left", a, b, c),
+    price = list_builder.TextRectangle(640, 50, constant.buttonForegroundColor, "Price", 18, "center", b, c),
+    priceText = func(640, 50, constant.buttonForegroundColor, activeItem.price, 18, "left", a, b, c),
+    id = list_builder.TextRectangle(640, 50, constant.buttonForegroundColor, "ID: " .. activeItem.id, 18, "center", b, c),
+    photo = list_builder.TextRectangle(640, 50, constant.buttonForegroundColor,
+      "Photo RawData (Future will have image-taking and display)", 18, "center", b, c),
+    photoText = func(640, 50, constant.buttonForegroundColor, activeItem.photo, 18, "left", a, b, c),
+    part = list_builder.TextRectangle(640, 50, constant.buttonForegroundColor, "Part Number", 18, "center", b, c),
+    partText = func(640, 50, constant.buttonForegroundColor, activeItem.partNumber or "", 18, "left", a, b, c),
+    retailer = list_builder.TextRectangle(640, 50, constant.buttonForegroundColor, "Retailer", 18, "center", b, c),
+    retailerText = func(640, 50, constant.buttonForegroundColor, activeItem.retailer, 18, "left", a, b, c),
+    description = func(640, 50, constant.buttonForegroundColor, activeItem.description, 18, "left", a, b, c),
   }
-  container = gui.Container(0, 0, 720, 1280, gui.Color(0, 1, 0, 1), 720, 1280)
+  container = gui.Container(0, 0, 720, 1280, constant.buttonForegroundColor, 720, 1280)
   container:add(list_builder.construct())
   container:add(_item.back)
   for k, v in pairs(_item) do

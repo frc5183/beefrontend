@@ -7,6 +7,7 @@ local err = require "state.error"
 local item = require "state.item"
 local flux = require "lib.external.flux"
 local wait = require "lib.wait"
+local constant = require "constant"
 local gui = require "lib.gui"
 local menu
 local canEdit = true
@@ -21,13 +22,19 @@ local initial = true
 ---@type integer
 local adjust = 0
 local function load()
-  local list_builder = gui.List(0, 40, 120, 660, 1140, gui.Color(0, 1, 0, 1), 0)
+  local list_builder = gui.List(0, 40, 20, 660, 1140, constant.buttonForegroundColor, 10)
   local _list = {
     name = "list",
-    back = gui.TextButton(40, 20, 320, 50, gui.Color(0, 1, 0, 1), "Back", 18, "center"),
-    refresh = gui.TextButton(40, 70, 320, 50, gui.Color(0, 1, 0, 1), "Refresh", 18, "center"),
-    left = gui.TextButton(360, 20, 320, 50, gui.Color(0, 1, 0, 1), "Page Left", 18, "center"),
-    right = gui.TextButton(360, 70, 320, 50, gui.Color(0, 1, 0, 1), "Page Right", 18, "center")
+    back = gui.TextButton(0, 0, 320, 50, constant.buttonForegroundColor, "Back", 18, "center", constant.textColor,
+      constant.buttonBackgroundColor),
+    refresh = gui.TextButton(0, 0, 320, 50, constant.buttonForegroundColor, "Refresh", 18, "center", constant.textColor,
+      constant.buttonBackgroundColor),
+    left = gui.TextButton(320, 0, 320, 50, constant.buttonForegroundColor, "Page Left", 18, "center", constant.textColor,
+      constant.buttonBackgroundColor),
+    right = gui.TextButton(320, 0, 320, 50, constant.buttonForegroundColor, "Page Right", 18, "center",
+      constant.textColor, constant.buttonBackgroundColor),
+    topDouble = list_builder.Container(640, 50, constant.buttonForegroundColor, 640, 50),
+    bottomDouble = list_builder.Container(640, 50, constant.buttonForegroundColor, 640, 50),
   }
   if (not initial) then
     ---Response
@@ -61,7 +68,8 @@ local function load()
         items = {}
       end
       for k = adjust + 1, math.min(adjust + 50, #items) do
-        local newbutton = list_builder.TextButton(640, 50, gui.Color(0, 1, 0, 1), "PLACEHOLDER", 18, "center")
+        local newbutton = list_builder.TextButton(640, 50, constant.buttonForegroundColor, "PLACEHOLDER", 18, "center",
+          constant.textColor, constant.buttonBackgroundColor)
         local newitem = items[k]
         newbutton:setText(newitem.name)
         newbutton:onClick(function(pt, button, presses)
@@ -73,7 +81,8 @@ local function load()
         end)
       end
       if (canEdit) then
-        local newitem = list_builder.TextButton(640, 50, gui.Color(0, 1, 0, 1), "New Item", 18, "center")
+        local newitem = list_builder.TextButton(640, 50, constant.buttonForegroundColor, "New Item", 18, "center",
+          constant.textColor, constant.buttonBackgroundColor)
         newitem:onClick(function(pt, button, presses)
           if (newitem:contains(pt) and button == 1) then
             item.load(true)
@@ -83,7 +92,7 @@ local function load()
       end
     end
   end
-  container = gui.Container(0, 0, 720, 1280, gui.Color(0, 1, 0, 1), 720, 1280)
+  container = gui.Container(0, 0, 720, 1280, constant.buttonForegroundColor, 720, 1280)
   container:add(list_builder.construct())
   local b = _list.back
   b:onClick(function(pt, button, presses)
@@ -92,14 +101,14 @@ local function load()
       wait(0.05, function() state.switch(menu) end)
     end
   end)
-  container:add(b)
+  _list.topDouble:add(b)
   local b = _list.refresh
   b:onClick(function(pt, button, presses)
     if (b:contains(pt) and button == 1) then
       load()
     end
   end)
-  container:add(b)
+  _list.topDouble:add(b)
   local b = _list.right
   b:onClick(function(pt, button, presses)
     if (b:contains(pt) and button == 1) then
@@ -109,7 +118,7 @@ local function load()
       load()
     end
   end)
-  container:add(b)
+  _list.bottomDouble:add(b)
   local b = _list.left
   b:onClick(function(pt, button, presses)
     if (b:contains(pt) and button == 1) then
@@ -119,9 +128,9 @@ local function load()
       load()
     end
   end)
-  container:add(b)
+  _list.bottomDouble:add(b)
   for k, v in pairs(_list) do
-    list[k]=v
+    list[k] = v
   end
   function list.draw()
     gui.Sizer.begin()
@@ -172,7 +181,7 @@ local function load()
     menu = m
   end
   initial = false
-  list.load=load
+  list.load = load
 end
 load()
 return list
