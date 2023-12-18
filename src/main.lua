@@ -1,7 +1,8 @@
 local state = require "lib.state"
 local assetloader = require "lib.assetloader"
 local Sizer = require "lib.gui.subsystem.Sizer"
-local menu = require"state.menu"
+local list = require "state.list"
+local menu = require "state.menu"
 require "lib.math2".integrate(math)
 local om = love.mouse.getPosition
 function love.mouse.getPosition()
