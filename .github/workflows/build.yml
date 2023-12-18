@@ -20,7 +20,7 @@ jobs:
            sudo apt install sed libfuse2
            git clone --recurse-submodule https://github.com/frc5183/beefrontend/
            wget https://nightly.link/love2d/love/workflows/main/12.0-development/love-linux-x86_64.AppImage.zip
-           wget https://nightly.link/love2d/love/workflows/main/12.0-development/love-windows-x64-compat.zip
+           wget https://nightly.link/love2d/love/workflows/main/12.0-development/love-windows-x64.zip
            wget https://nightly.link/love2d/love/workflows/main/12.0-development/love-macos.zip
            unzip ./love-linux-x86_64.AppImage.zip
            unzip ./love-windows-x64-compat.zip
